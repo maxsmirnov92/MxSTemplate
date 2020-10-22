@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppDialogTheme" parent="Theme.AppCompat.DayNight.Dialog.Alert">
+        <!--        <item name="buttonBarPositiveButtonStyle">@style/DialogButtonStyle</item>-->
+        <!--        <item name="buttonBarNegativeButtonStyle">@style/DialogButtonStyle</item>-->
+        <!--        <item name="buttonBarNeutralButtonStyle">@style/DialogButtonStyle</item>-->
+        <!--        <item name="android:background">@color/colorWindowBackgroundDialog</item>-->
+        <item name="borderlessButtonStyle">@style/Widget.AppCompat.Button.Borderless</item>
+    </style>
+    <style name="ProgressDialogTheme" parent="AppDialogTheme">
+        <item name="android:windowMinWidthMajor">40%</item>
+        <item name="android:windowMinWidthMinor">40%</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_rounded</item>
+    </style>
+</resources>

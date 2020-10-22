@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="gray_light">#cecdcd</color>
+    <color name="ripple">@color/gray_light</color>
+    <color name="bg_dialog">@android:color/white</color>
+</resources>

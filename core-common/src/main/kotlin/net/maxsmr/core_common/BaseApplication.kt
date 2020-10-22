@@ -1,0 +1,87 @@
+package net.maxsmr.core_common
+
+import android.app.Activity
+import android.app.Application
+import android.os.Bundle
+import android.util.Log
+import androidx.annotation.CallSuper
+import androidx.multidex.MultiDexApplication
+import io.reactivex.plugins.RxJavaPlugins
+import net.maxsmr.commonutils.android.activity.ActiveActivityHolder
+import net.maxsmr.commonutils.logger.BaseLogger
+import net.maxsmr.commonutils.logger.LogcatLogger
+import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
+
+const val VERSION_NOT_SET = -1
+const val PLATFORM_NAME = "Android"
+
+abstract class BaseApplication : MultiDexApplication(), Application.ActivityLifecycleCallbacks {
+
+    companion object {
+
+        @JvmStatic
+        lateinit var context: BaseApplication
+            private set
+    }
+
+    protected val activeActivityHolder = ActiveActivityHolder()
+
+    override fun onCreate() {
+
+        BaseLoggerHolder.initInstance { object: BaseLoggerHolder(false) {
+            override fun createLogger(className: String): BaseLogger {
+                return LogcatLogger(className)
+            }
+        } }
+
+
+        super.onCreate()
+        context = this
+
+
+        registerActivityLifecycleCallbacks(this)
+        RxJavaPlugins.setErrorHandler { Log.e("Application", "Rx error occurred: $it", it) }
+    }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        // do nothing
+    }
+
+    override fun onActivityStarted(activity: Activity) {
+        // do nothing
+    }
+
+    @CallSuper
+    override fun onActivityResumed(activity: Activity) {
+        activeActivityHolder.activity = activity
+    }
+
+    @CallSuper
+    override fun onActivityPaused(activity: Activity) {
+        activeActivityHolder.clearActivity()
+    }
+
+    override fun onActivityStopped(activity: Activity) {
+        // do nothing
+    }
+
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
+        // do nothing
+    }
+
+    override fun onActivityDestroyed(activity: Activity) {
+        // do nothing
+    }
+
+
+    open fun isRuOnlyLocale(): Boolean {
+        return true
+    }
+
+
+    open fun getProtocolVersion(): Int {
+        return VERSION_NOT_SET
+    }
+
+
+}
