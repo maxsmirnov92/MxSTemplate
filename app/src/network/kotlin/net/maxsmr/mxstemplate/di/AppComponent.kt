@@ -1,4 +1,4 @@
-package net.maxsmr.mxstemplate.di.app
+package net.maxsmr.mxstemplate.di
 
 import android.content.Context
 import com.squareup.picasso.Picasso
@@ -9,8 +9,8 @@ import net.maxsmr.core_network.HostManager
 import net.maxsmr.core_network.di.NetworkComponent
 import net.maxsmr.mxstemplate.TemplateApp
 import net.maxsmr.mxstemplate.db.AppDataBase
+import net.maxsmr.mxstemplate.di.app.*
 import net.maxsmr.mxstemplate.di.network.ApiRequestModule
-import net.maxsmr.mxstemplate.di.PerApplication
 import net.maxsmr.mxstemplate.di.network.HostManagerModule
 import net.maxsmr.mxstemplate.di.network.NetworkModule
 import net.maxsmr.mxstemplate.di.network.OkHttpModule
@@ -22,6 +22,7 @@ const val DI_NAME_HOST_MANAGER = "host_manager"
 @PerApplication
 @Component(modules = [
     AppModule::class,
+    ServiceModule::class,
     ActivitiesModule::class,
     DatabaseModule::class,
     SecondaryAppModule::class,

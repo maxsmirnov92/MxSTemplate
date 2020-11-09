@@ -161,9 +161,10 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         if (visible) blockingProgress.onStart() else blockingProgress.onStop()
     }
 
-    private fun createViewModelFactory(savedInstanceState: Bundle?): WrapperRxVmFactory<VM>? {
+    private fun createViewModelFactory(savedInstanceState: Bundle?): WrapperVmFactory<VM>? {
+        val owner: LifecycleOwner = if (isSharedViewModel) requireActivity() else this
         return viewModelFactory?.let {
-            WrapperRxVmFactory(it, getParamsOrThrow(), this as SavedStateRegistryOwner, savedInstanceState)
+            WrapperVmFactory(it, getParamsOrThrow(), owner as SavedStateRegistryOwner, savedInstanceState)
         }
     }
 
@@ -200,7 +201,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
      *
      * @param factory фабрика, содержащая остальные параметры для создания VM (помимо [SavedStateHandle])
      */
-    private class WrapperRxVmFactory<VM : BaseViewModel<*>>(
+    private class WrapperVmFactory<VM : BaseViewModel<*>>(
         private val factory: BaseVmFactory<VM>,
         private val params: State.Params,
         owner: SavedStateRegistryOwner,

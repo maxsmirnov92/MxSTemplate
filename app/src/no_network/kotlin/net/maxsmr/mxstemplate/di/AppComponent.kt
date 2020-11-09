@@ -1,4 +1,4 @@
-package net.maxsmr.mxstemplate.di.app
+package net.maxsmr.mxstemplate.di
 
 import android.content.Context
 import dagger.BindsInstance
@@ -6,9 +6,11 @@ import dagger.Component
 import dagger.android.AndroidInjector
 import net.maxsmr.mxstemplate.TemplateApp
 import net.maxsmr.mxstemplate.db.AppDataBase
-import net.maxsmr.mxstemplate.di.PerApplication
+import net.maxsmr.mxstemplate.di.app.AppInfoModule
+import net.maxsmr.mxstemplate.di.app.AppModule
+import net.maxsmr.mxstemplate.di.app.DatabaseModule
+import net.maxsmr.mxstemplate.di.app.SecondaryAppModule
 import net.maxsmr.mxstemplate.di.ui.ActivitiesModule
-import javax.inject.Named
 
 @PerApplication
 @Component(modules = [

@@ -13,7 +13,7 @@ import net.maxsmr.core_network.error.handler.error.http.BaseHttpErrorHandler
 import net.maxsmr.core_network.error.handler.error.http.LogHttpErrorHandler
 import net.maxsmr.core_network.model.request.api.IApiMapper
 import net.maxsmr.mxstemplate.di.PerApplication
-import net.maxsmr.mxstemplate.di.app.DI_NAME_HOST_MANAGER
+import net.maxsmr.mxstemplate.di.DI_NAME_HOST_MANAGER
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

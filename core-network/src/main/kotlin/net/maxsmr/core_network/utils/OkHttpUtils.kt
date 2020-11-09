@@ -12,7 +12,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 
-fun executeCall(okHttpClient: OkHttpClient, requestConfigurator: (Request.Builder) -> Unit): Response {
+@Throws(IOException::class)
+fun executeCall(okHttpClient: OkHttpClient, requestConfigurator: (Request.Builder) -> Any?): Response {
     val request = Request.Builder()
     requestConfigurator(request)
     return okHttpClient.newCall(request.build()).execute()

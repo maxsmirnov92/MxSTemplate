@@ -3,8 +3,6 @@ package net.maxsmr.mxstemplate.di
 import com.squareup.picasso.Picasso
 import net.maxsmr.core_network.di.networkComponent
 import net.maxsmr.mxstemplate.TemplateApp
-import net.maxsmr.mxstemplate.di.app.AppComponent
-import net.maxsmr.mxstemplate.di.app.DaggerAppComponent
 
 object AppInjector {
 

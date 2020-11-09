@@ -6,7 +6,7 @@ import dagger.Provides
 import net.maxsmr.core_network.HostManager
 import net.maxsmr.mxstemplate.api.HostManagerImpl
 import net.maxsmr.mxstemplate.di.PerApplication
-import net.maxsmr.mxstemplate.di.app.DI_NAME_HOST_MANAGER
+import net.maxsmr.mxstemplate.di.DI_NAME_HOST_MANAGER
 import javax.inject.Named
 
 @Module

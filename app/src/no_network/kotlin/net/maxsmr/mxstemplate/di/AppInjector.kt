@@ -1,7 +1,6 @@
 package net.maxsmr.mxstemplate.di
 
 import net.maxsmr.mxstemplate.TemplateApp
-import net.maxsmr.mxstemplate.di.app.AppComponent
 import net.maxsmr.mxstemplate.di.app.DaggerAppComponent
 
 object AppInjector {

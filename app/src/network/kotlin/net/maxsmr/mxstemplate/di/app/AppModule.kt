@@ -24,9 +24,5 @@ interface AppModule {
 //    @PerApplication
 //    fun bindDatabase(db: AppDataBase): AppDataBase
 
-//    @ContributesAndroidInjector
-//    @PerService
-//    fun logSendIntentService(): LogSendIntentService
-
     // для инжекторных методов не может быть абстрактных return-типов
 }
