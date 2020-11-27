@@ -35,7 +35,8 @@ class TestFragment : BaseFragment<TestViewModel>() {
             return TestViewModel(
                 handle,
                 schedulersProvider,
-                stringsProvider
+                stringsProvider,
+                null
             )
         }
     }

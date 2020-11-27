@@ -44,16 +44,19 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+        freeCompilerArgs = ["$jvmDefaultArg"]
     }
 }
 
 dependencies {
     api fileTree(dir: "libs", include: ["*.jar"])
 
-    api project(":core-common")
+    api project(':core-common')
 
-    // NetworkUtils
-    api "net.maxsmr:networkutils:$networkUtilsVersion"
+    api project(path: ':commonutils')
+    api project(path: ':tasksutils')
+    api project(path: ':networkutils')
+//    api "net.maxsmr:networkutils:$networkUtilsVersion"
 
     // OkHttp
     api "com.squareup.okhttp3:okhttp:$okHttpVersion"
@@ -72,4 +75,5 @@ dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+
 }

@@ -6,7 +6,7 @@ import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import net.maxsmr.commonutils.data.gson.exclusion.FieldsAnnotationExclusionStrategy
-import net.maxsmr.core_network.error.handler.error.ErrorHandler
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_network.error.handler.response.BaseResponseHandler
 import net.maxsmr.core_network.gson.converter.factory.ApiRequestTypeAdapterFactory
 import net.maxsmr.core_network.gson.converter.factory.EmptyToNullTypeAdapterFactory

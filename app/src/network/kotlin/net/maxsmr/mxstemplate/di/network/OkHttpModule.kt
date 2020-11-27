@@ -29,6 +29,7 @@ const val DI_NAME_INTERCEPTOR_FAIL_RETRY = "interceptor_fail_retry"
 const val DI_NAME_INTERCEPTOR_FAIL_RETRY_LOG = "interceptor_fail_retry_log"
 const val DI_NAME_API_MAPPER = "api_mapper"
 const val DI_NAME_OK_HTTP_MAIN = "ok_http_main"
+const val DI_NAME_OK_HTTP_DOWNLOADER = "ok_http_downloader"
 const val DI_NAME_OK_HTTP_LOGGING = "ok_http_logging"
 const val DI_NAME_OK_HTTP_PICASSO = "ok_http_picasso"
 
@@ -116,6 +117,23 @@ class OkHttpModule {
             addInterceptor(remoteLoggingInterceptor)
             addInterceptor(httpLoggingInterceptor)
             addInterceptor(failRetryInterceptor)
+        }.build()
+    }
+
+    /**
+     * @return [OkHttpClient] для [LogSendIntentService]
+     */
+    @Provides
+    @PerApplication
+    @Named(DI_NAME_OK_HTTP_DOWNLOADER)
+    fun provideDownloaderOkHttpClient(
+        httpLoggingInterceptor: HttpLoggingInterceptor
+    ): OkHttpClient {
+        return OkHttpClient.Builder().apply {
+            connectTimeout(NETWORK_TIMEOUT, TimeUnit.SECONDS)
+            readTimeout(NETWORK_TIMEOUT, TimeUnit.SECONDS)
+            writeTimeout(NETWORK_TIMEOUT, TimeUnit.SECONDS)
+            addInterceptor(httpLoggingInterceptor)
         }.build()
     }
 

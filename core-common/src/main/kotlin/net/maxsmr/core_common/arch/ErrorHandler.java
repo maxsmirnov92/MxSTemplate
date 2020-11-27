@@ -1,4 +1,4 @@
-package net.maxsmr.core_network.error.handler.error;
+package net.maxsmr.core_common.arch;
 
 /**
  * Интерфейс обработчика ошибок

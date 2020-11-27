@@ -5,22 +5,29 @@ import android.view.View
 import androidx.annotation.CallSuper
 import androidx.lifecycle.*
 import androidx.savedstate.SavedStateRegistryOwner
+import com.agna.ferro.rx.MaybeOperatorFreeze
+import com.agna.ferro.rx.ObservableOperatorFreeze
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.MaybeOperator
+import io.reactivex.ObservableOperator
 import me.ilich.juggler.states.State
 import net.maxsmr.commonutils.android.gui.actions.BaseViewModelAction
 import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentHideMessageAction
 import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentShowMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.*
+import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageAction
+import net.maxsmr.commonutils.android.gui.actions.message.SnackMessageAction
+import net.maxsmr.commonutils.android.gui.actions.message.ToastMessageAction
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.holder.DialogFragmentsHolder
+import net.maxsmr.commonutils.rx.live.LiveMaybe
+import net.maxsmr.commonutils.rx.live.LiveObservable
 import net.maxsmr.commonutils.rx.live.LiveSubject
 import net.maxsmr.commonutils.rx.live.event.VmEvent
 import net.maxsmr.commonutils.rx.live.event.VmListEvent
-import net.maxsmr.core_common.ui.dialog.CustomViewProgressable
 import net.maxsmr.core_common.ui.actions.NavigationAction
+import net.maxsmr.core_common.ui.dialog.CustomViewProgressable
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
 import net.maxsmr.mxstemplate.R
@@ -42,8 +49,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     protected val dialogFragmentsHolder = DialogFragmentsHolder()
 
-    private val freezeSelector = BehaviorSubject.createDefault(false)
-
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
 
@@ -62,7 +67,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         with(savedInstanceState) {
             super.onCreate(this)
             viewModel = createViewModel(this)
-            viewModel.freezeSelector = freezeSelector
             beforeRestoreFromBundle(this)
             viewModel.restoreFromBundle(this)
         }
@@ -77,14 +81,13 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     override fun onResume() {
         super.onResume()
-        viewModel.freezeSelector = freezeSelector
-        freezeSelector.onNext(false)
+        viewModel.notifyResumed(this::class.java.name)
     }
 
     override fun onPause() {
         super.onPause()
         if (freezeEventsOnPause) {
-            freezeSelector.onNext(true)
+            viewModel.notifyPaused(this::class.java.name)
         }
     }
 
@@ -192,8 +195,23 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     }
 
     @JvmOverloads
-    protected fun <T> LiveSubject<T>.observe(owner: LifecycleOwner = viewLifecycleOwner, onNext: (T) -> Unit) {
-        this.subscribe(owner, onNext = onNext)
+    protected fun <T> LiveObservable<T>.subscribeObservable(
+        owner: LifecycleOwner = viewLifecycleOwner,
+        operator: ObservableOperator<T, T>? = ObservableOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+        emitOnce: Boolean = false,
+        onNext: (T) -> Unit
+    ) {
+        subscribe(owner, operator, emitOnce, onNext)
+    }
+
+    @JvmOverloads
+    protected fun <T> LiveMaybe<T>.subscribeMaybe(
+        owner: LifecycleOwner = viewLifecycleOwner,
+        operator: MaybeOperator<T, T>? = MaybeOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+        emitOnce: Boolean = false,
+        onNext: (T) -> Unit
+    ) {
+        subscribe(owner, operator, emitOnce, onNext)
     }
 
     /**

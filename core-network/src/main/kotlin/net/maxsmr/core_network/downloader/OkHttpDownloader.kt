@@ -1,25 +1,33 @@
 package net.maxsmr.core_network.downloader
 
 import android.annotation.TargetApi
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
+import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION_CODES.Q
-import android.provider.MediaStore
 import android.provider.MediaStore.Downloads.*
-import net.maxsmr.commonutils.data.FileHelper
-import net.maxsmr.commonutils.data.FileHelper.createNewFile
+import androidx.core.content.FileProvider
+import net.maxsmr.commonutils.android.media.*
+import net.maxsmr.commonutils.data.IStreamNotifier
+import net.maxsmr.commonutils.data.createFileOrThrow
+import net.maxsmr.commonutils.data.deleteFileOrThrow
+import net.maxsmr.commonutils.data.toFosOrThrow
+import net.maxsmr.core_network.error.exception.http.HttpProtocolException
 import net.maxsmr.core_network.utils.executeCall
+import net.maxsmr.core_network.utils.isResumeDownloadSupported
 import net.maxsmr.core_network.utils.responseBodyToOutputStream
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
 
-private val PROJECTION = arrayOf(MediaStore.Downloads.TITLE)
-private const val SORT_ORDER = MediaStore.Downloads.TITLE
+private val PROJECTION = listOf(TITLE)
+private const val SORT_ORDER = TITLE
+
+private const val HEADER_RANGE = "Range"
 
 /**
  * @param downloadDir нужно для версий < Q
@@ -30,7 +38,7 @@ class OkHttpDownloader(
     private val downloadDir: File
 ) {
 
-    fun listTitles() =
+    fun listTitles(): List<String> =
         if (Build.VERSION.SDK_INT >= Q) {
             listTitlesQ()
         } else {
@@ -38,101 +46,268 @@ class OkHttpDownloader(
         }
 
     @Throws(RuntimeException::class)
-    fun download(url: String, filename: String, mimeType: String, requestConfigurator: (Request.Builder) -> Unit) {
-        if (Build.VERSION.SDK_INT >= Q) {
-            downloadQ(filename, mimeType, requestConfigurator)
-        } else {
-            downloadLegacy(filename, requestConfigurator)
-        }
+    fun download(
+        filename: String,
+        mimeType: String,
+        resumeDownloadIfPossible: Boolean,
+        deleteUnfinishedFile: DeleteUnfinishedMode,
+        existingUri: Uri?,
+        requestConfigurator: (Request.Builder) -> String,
+        deleteHandler: ((SecurityException) -> Unit)? = null,
+        insertUpdateHandler: ((SecurityException) -> Unit)? = null,
+        downloadNotifier: IDownloadNotifier? = null
+    ): Uri = if (Build.VERSION.SDK_INT >= Q) {
+        downloadQ(
+            filename,
+            mimeType,
+            resumeDownloadIfPossible,
+            deleteUnfinishedFile,
+            existingUri,
+            requestConfigurator = requestConfigurator,
+            deleteHandler = deleteHandler,
+            insertUpdateHandler = insertUpdateHandler,
+            downloadNotifier = downloadNotifier
+        )
+    } else {
+        downloadLegacy(
+            filename,
+            resumeDownloadIfPossible,
+            deleteUnfinishedFile,
+            existingUri,
+            requestConfigurator,
+            downloadNotifier
+        )
     }
 
     @TargetApi(Q)
-    private fun listTitlesQ(): List<String>? = context.contentResolver.query(
+    private fun listTitlesQ(): List<String> = queryUri(
+        context,
         EXTERNAL_CONTENT_URI,
+        String::class.java,
         PROJECTION,
-        null,
-        null,
-        SORT_ORDER
-    )?.use { cursor ->
-        cursor.mapToList { it.getString(0) }
-    }
+        sortOrder = SORT_ORDER
+    )
 
-    private fun listTitlesLegacy() =
-        FileHelper.getFiles(downloadDir, FileHelper.GetMode.FILES, null, null, 1)
-            .map { it.name }
-            .sorted()
+    private fun listTitlesLegacy(): List<String> =
+        downloadDir.listFiles()
+            ?.filter { it.isFile && it.exists() }
+            ?.map { it.name }
+            ?.sorted() ?: emptyList()
 
     @TargetApi(Q)
     @Throws(RuntimeException::class)
     private fun downloadQ(
         filename: String,
         mimeType: String,
-        requestConfigurator: (Request.Builder) -> Unit
-    ) {
+        resumeDownloadIfPossible: Boolean,
+        deleteUnfinishedFile: DeleteUnfinishedMode,
+        existingUri: Uri?,
+        tryDeleteExisting: Boolean = false,
+        requestConfigurator: (Request.Builder) -> String,
+        deleteHandler: ((SecurityException) -> Unit)? = null,
+        insertUpdateHandler: ((SecurityException) -> Unit)? = null,
+        downloadNotifier: IDownloadNotifier? = null
+    ): Uri {
+
+        var existingUri = existingUri
+
+        if (existingUri != null && ContentResolver.SCHEME_CONTENT != existingUri.scheme) {
+            existingUri = null
+        }
+
+        val resolver = context.contentResolver
+
+        fun tryInsert(values: ContentValues) = try {
+            resolver.insert(EXTERNAL_CONTENT_URI, values)
+        } catch (e: Exception) {
+            if (e is SecurityException) {
+                insertUpdateHandler?.invoke(e)
+            }
+            throw RuntimeException("Cannot insert to $EXTERNAL_CONTENT_URI", e)
+        }
+
+        fun tryUpdate(uri: Uri, values: ContentValues) = try {
+            resolver.update(uri, values, null, null)
+        } catch (e: SecurityException) {
+            insertUpdateHandler?.invoke(e)
+            throw RuntimeException("Cannot update uri $uri", e)
+        }
+
+        val request = Request.Builder()
+        val downloadUrl = requestConfigurator(request)
 
         val values = ContentValues().apply {
+//            put(DOCUMENT_ID, downloadId)
+            put(TITLE, filename)
             put(DISPLAY_NAME, filename)
             put(MIME_TYPE, mimeType)
+            put(DOWNLOAD_URI, downloadUrl)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 put(IS_DOWNLOAD, 1)
             }
         }
 
-        val resolver = context.contentResolver
-        val uri = resolver.insert(EXTERNAL_CONTENT_URI, values)
-            ?: throw RuntimeException("insert to ${EXTERNAL_CONTENT_URI} failed")
-
-
-        val response = executeCall(okHttpClient, requestConfigurator)
-
-        try {
-            if (!response.isSuccessful) {
-                throw RuntimeException("Response ended with: ${response.code()}")
-            }
-
-            values.clear()
-            values.put(IS_PENDING, 1)
-
+        if (tryDeleteExisting && existingUri != null && isResourceExists(context, existingUri)) {
+            // апдейт не вызываем, удаляем то, что есть
+            // (даже если файл не сушествует или его хэш неправильный - запись в таблице есть)
             try {
-                responseBodyToOutputStream(response, resolver.openOutputStream(uri))
-            } catch (e: FileNotFoundException) {
-                throw RuntimeException(e)
-            }
-
-        } finally {
-            with(values) {
-                clear()
-                put(IS_PENDING, 0)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    put(IS_DOWNLOAD, 0)
-                }
-                resolver.update(uri, values, null, null)
+                resolver.delete(existingUri, null, null)
+                existingUri = null
+            } catch (e: SecurityException) {
+                deleteHandler?.invoke(e)
+                throw RuntimeException("Cannot delete existing resource $existingUri", e)
             }
         }
+
+        val previousSize: Long
+        val uri: Uri
+        if (existingUri == null || !resumeDownloadIfPossible) {
+            // вставка в external с нуля
+            uri = tryInsert(values) ?: throw RuntimeException("Insert to $EXTERNAL_CONTENT_URI failed")
+            previousSize = 0
+        } else {
+            // актуализируем инфу по текущей урле
+            tryUpdate(existingUri, values)
+            uri = existingUri
+            previousSize = getResourceSize(context, existingUri)
+        }
+
+        downloadNotifier?.onUriReady(uri)
+
+        addRangeHeader(request, previousSize)
+
+        val response = try {
+            okHttpClient.newCall(request.build()).execute()
+        } catch (e: Exception) {
+            throw RuntimeException("Request execute failed", e)
+        }
+
+        val isSuccessful = response.isSuccessful
+
+        if (isSuccessful) {
+            with(values) {
+                clear()
+                put(IS_PENDING, 1)
+                tryUpdate(uri, this)
+            }
+        }
+
+        val isResumeSupported = isSuccessful && isResumeDownloadSupported(response)
+
+        checkResponseOrThrow(response)
+
+        var responseBody: ResponseBody? = null
+        try {
+            responseBody = responseBodyToOutputStream(
+                response,
+                uri.openOutputStreamOrThrow(resolver),
+                previousSize,
+                downloadNotifier
+            )
+        } catch (e: RuntimeException) {
+            val resultException = HttpProtocolException.RawBuilder(response, e).build()
+            if (deleteUnfinishedFile.shouldDelete(isResumeSupported)) {
+                try {
+                    deleteResourceOrThrow(context, uri)
+                } catch (e: RuntimeException) {
+                    throw RuntimeException("Cannot delete unfinished resource $uri", resultException)
+                }
+            }
+            throw resultException
+        } finally {
+            if (responseBody != null // response был получен
+                || !deleteUnfinishedFile.shouldDelete(isResumeSupported)
+            ) {
+                with(values) {
+                    clear()
+                    put(IS_PENDING, 0)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        put(IS_DOWNLOAD, 0)
+                    }
+                    tryUpdate(uri, this)
+                }
+            }
+        }
+
+        return uri
     }
 
 
     @Throws(RuntimeException::class)
     private fun downloadLegacy(
         filename: String,
-        requestConfigurator: (Request.Builder) -> Unit
-    ) {
-        val response = executeCall(okHttpClient, requestConfigurator)
+        resumeDownloadIfPossible: Boolean,
+        deleteUnfinishedFile: DeleteUnfinishedMode,
+        existingUri: Uri?,
+        requestConfigurator: (Request.Builder) -> String,
+        downloadNotifier: IDownloadNotifier? = null
+    ): Uri {
 
-        if (!response.isSuccessful) {
-            throw RuntimeException("Response ended with: ${response.code()}")
+        val previousSize = if (resumeDownloadIfPossible) getResourceSize(context, existingUri) else 0
+
+        val response = executeCall(okHttpClient) {
+            requestConfigurator(it)
+            addRangeHeader(it, previousSize)
         }
 
-        val newFile = createNewFile(filename, downloadDir.absolutePath) ?: throw RuntimeException("Can't create file $filename in $downloadDir")
+        checkResponseOrThrow(response)
+
+        val isResumeSupported = isResumeDownloadSupported(response)
+
+        val newFile = createFileOrThrow(
+            filename,
+            downloadDir.absolutePath,
+            previousSize <= 0 || !isResumeSupported // пересоздание файла
+        )
+
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", newFile)
+
+        downloadNotifier?.onUriReady(uri)
 
         try {
-            responseBodyToOutputStream(response, FileOutputStream(newFile))
-        } catch (e: FileNotFoundException) {
-            throw RuntimeException(e)
+            responseBodyToOutputStream(
+                response,
+                newFile.toFosOrThrow(),
+                previousSize,
+                downloadNotifier
+            )
+        } catch (e: RuntimeException) {
+            val resultException = HttpProtocolException.RawBuilder(response, e).build()
+            if (deleteUnfinishedFile.shouldDelete(isResumeSupported)) {
+                try {
+                    deleteFileOrThrow(newFile)
+                } catch (e: RuntimeException) {
+                    throw RuntimeException("Cannot delete unfinished file $newFile", resultException)
+                }
+            }
+            throw resultException
+        }
+        scanFile(context, newFile)
+        return uri
+    }
+
+    private fun addRangeHeader(request: Request.Builder, size: Long) {
+        if (size > 0) {
+            request.addHeader(HEADER_RANGE, "bytes=$size-")
         }
     }
 
-    private fun <T : Any> Cursor.mapToList(predicate: (Cursor) -> T): List<T> =
-        generateSequence { if (moveToNext()) predicate(this) else null }
-            .toList()
+    @Throws(RuntimeException::class)
+    private fun checkResponseOrThrow(response: Response) {
+        if (!response.isSuccessful) {
+            throw HttpProtocolException.RawBuilder(response, null).build()
+        }
+    }
+
+    enum class DeleteUnfinishedMode {
+        AUTO, ENABLED, DISABLED;
+
+        fun shouldDelete(isResumeSupported: Boolean) =
+            if (this == AUTO) !isResumeSupported else this == ENABLED
+    }
+
+    interface IDownloadNotifier: IStreamNotifier {
+
+        fun onUriReady(uri: Uri)
+    }
 }

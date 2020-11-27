@@ -1,7 +1,8 @@
-package net.maxsmr.mxstemplate.utils
+package net.maxsmr.mxstemplate.utils.validation
 
-import net.maxsmr.commonutils.data.conversion.format.parseDateNoThrow
+import net.maxsmr.commonutils.data.conversion.format.parseDate
 import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.mxstemplate.utils.normalizePhoneNumber
 import java.text.SimpleDateFormat
 
 const val REG_EX_PHONE_NUMBER_RUS = "^((\\+7|7|8)+([0-9]){10})\$"
@@ -10,8 +11,9 @@ const val REG_EX_EMAIL = "^[^ ]+@.[^!#\$%&'*+/=?^_`{|}~ -]+\\..[^!#\$%&'*+/=?^_`
 const val REG_EX_EMAIL_ALT = "^.+@.+\\..+$"
 const val REG_EX_SNILS = "^\\d{11}$"
 
-fun isPhoneNumberRusValid(phone: String?): Boolean =
-        validate(phone, REG_EX_PHONE_NUMBER_RUS)
+@JvmOverloads
+fun isPhoneNumberRusValid(phone: String?, shouldNormalize: Boolean = true): Boolean =
+        validate((if (shouldNormalize) normalizePhoneNumber(phone) else phone), REG_EX_PHONE_NUMBER_RUS)
 
 /**
  * Проверка валидности формата phone [ValidationUtilsKt.validate]
@@ -57,4 +59,4 @@ fun isDateValid(
         dateText: String,
         pattern: String,
         dateFormatConfigurator: ((SimpleDateFormat) -> Unit)? = null
-) = parseDateNoThrow(dateText, pattern, dateFormatConfigurator) != null
+) = parseDate(dateText, pattern, dateFormatConfigurator) != null

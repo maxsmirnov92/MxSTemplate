@@ -44,6 +44,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+        freeCompilerArgs = ["$jvmDefaultArg"]
     }
 }
 
@@ -53,7 +54,8 @@ dependencies {
     // Multi Dex
     api "androidx.multidex:multidex:$multidexVersion"
 
-    api "net.maxsmr:commonutils:$commonUtilsVersion"
+    api project(path: ':commonutils')
+//    api "net.maxsmr:commonutils:$commonUtilsVersion"
     api "net.maxsmr:recyclerview-lib:$recyclerViewLibVersion"
     api "net.maxsmr:jugglerhelper:$jugglerHelperVersion"
 
@@ -63,4 +65,34 @@ dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    api project(path: ':commonutils')
+
+    // TODO remove all below after bintray:
+
+    // Jetbrains annotations
+    api "org.jetbrains:annotations:$jetbrainsAnnotationsVersion"
+
+    // Android + Support
+    api "androidx.core:core:$androidxCoreVersion"
+    api "androidx.core:core-ktx:$androidxCoreVersion"
+    api "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    api "androidx.palette:palette:$androidxPaletteVersion"
+    api "androidx.palette:palette-ktx:$androidxPaletteVersion"
+    api "androidx.recyclerview:recyclerview:$androidxRecyclerViewVersion"
+    api "androidx.exifinterface:exifinterface:$androidxExifInterfaceVersion"
+    api "com.google.android.material:material:$materialVersion"
+
+    api "commons-net:commons-net:$commonsNetVersion"
+    api "com.google.code.gson:gson:$gsonVersion"
+
+    // Lifecycle
+    api "androidx.lifecycle:lifecycle-runtime:$lifecycleVersion"
+    api "androidx.lifecycle:lifecycle-extensions:$lifecycleVersion"
+
+    // Rx
+    api "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
+    api "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion"
+
+    // Tinkoff decoro
+    api "ru.tinkoff.decoro:decoro:$tinkoffDecoroVersion"
 }

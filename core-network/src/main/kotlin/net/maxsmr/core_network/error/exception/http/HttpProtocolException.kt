@@ -1,9 +1,8 @@
 package net.maxsmr.core_network.error.exception.http
 
-import android.util.Log
+import android.text.TextUtils
 import com.google.gson.Gson
 import net.maxsmr.commonutils.data.text.EMPTY_STRING
-import retrofit2.Call
 import retrofit2.HttpException
 import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.NO_ERROR
@@ -12,67 +11,151 @@ import net.maxsmr.core_network.utils.requestBodyToString
 import net.maxsmr.core_network.error.exception.NetworkException
 import net.maxsmr.core_network.error.exception.converters.BaseErrorResponseConverter
 import net.maxsmr.core_network.model.response.ResponseObj
-import java.io.IOException
-
-const val HTTP_CODE_SUCCESS = 200
+import net.maxsmr.core_network.utils.isResponseOk
+import net.maxsmr.core_network.utils.responseBodyToString
+import okhttp3.Response
+import java.lang.RuntimeException
 
 /**
  * Базовая ошибка при получении ответа не 2xx с разобранными полями ответа;
  * может содержать в себе исходный [HttpException];
  * не бросается в чистом виде, идёт в составе [BaseWrappedHttpException]
  */
-open class HttpProtocolException(
-        message: String?,
-        cause: Throwable?
-) : NetworkException(message, cause) {
-
-    var url: String = EMPTY_STRING
-    var method: String = EMPTY_STRING
-    var headers: Map<String, String> = mapOf()
-    var httpCode: Int = HttpErrorCode.UNKNOWN.code
-    var httpMessage: String = EMPTY_STRING
+class HttpProtocolException(
+    val url: String = EMPTY_STRING,
+    val method: String = EMPTY_STRING,
+    val headers: Map<String, String> = mapOf(),
+    val httpCode: Int = HttpErrorCode.UNKNOWN.code,
+    val httpMessage: String = EMPTY_STRING,
     /**
      * дополнительный внутренний код сервера
      */
-    var innerCode: Int = NO_ERROR
-    var serverMessage: String = EMPTY_STRING
+    val innerCode: Int = NO_ERROR,
+    val innerMessage: String = EMPTY_STRING,
 
-    var requestBodyString: String = EMPTY_STRING
-    var errorBodyString: String = EMPTY_STRING
+    val requestBodyString: String = EMPTY_STRING,
+    val errorBodyString: String = EMPTY_STRING,
+    message: String?,
+    cause: Throwable?
+) : NetworkException(message, cause) {
 
-    private constructor(builder: Builder<out HttpProtocolException, out ResponseObj<*>>) :
-            this(prepareMessage(builder.httpMessage, builder.httpCode, builder.url, builder.serverMessage, builder.innerCode), builder.cause) {
-        url = builder.url
-        method = builder.method
-        headers = builder.headers
-        httpCode = builder.httpCode
-        httpMessage = builder.httpMessage
-        innerCode = builder.innerCode
-        errorBodyString = builder.errorBodyString
-        serverMessage = builder.serverMessage
-        requestBodyString = builder.requestBodyString
-    }
+    val httpErrorCode = HttpErrorCode.from(httpCode)
+
+    private constructor(builder: Builder<out ResponseObj<*>>) : this(
+        builder.url,
+        builder.method,
+        builder.headers,
+        builder.httpCode,
+        builder.httpMessage,
+        builder.innerCode,
+        builder.innerMessage,
+        builder.requestBodyString,
+        builder.errorBodyString,
+        prepareMessage(
+            builder.cause,
+            builder.url,
+            builder.method,
+            builder.httpMessage,
+            builder.httpCode.toString(),
+            builder.innerCode.toString(),
+            builder.innerMessage,
+            builder.errorBodyString
+        ),
+        builder.cause
+    )
+
+    private constructor(builder: RawBuilder) : this(
+        builder.url,
+        builder.method,
+        builder.headers,
+        builder.httpCode,
+        builder.httpMessage,
+        NO_ERROR,
+        EMPTY_STRING,
+        builder.requestBodyString,
+        builder.errorBodyString,
+        prepareMessage(
+            builder.cause,
+            builder.url,
+            builder.method,
+            builder.httpMessage,
+            builder.httpCode.toString(),
+            builder.errorBodyString
+        ), builder.cause
+    )
 
     /**
      * конструктор копирования из [HttpProtocolException]
      */
-    constructor(source: HttpProtocolException) :
-            this(prepareMessage(source.httpMessage, source.httpCode, source.url, source.serverMessage, source.innerCode), source.cause) {
-        url = source.url
-        method = source.method
-        headers = source.headers
-        httpCode = source.httpCode
-        httpMessage = source.httpMessage
-        innerCode = source.innerCode
-        serverMessage = source.serverMessage
-        requestBodyString = source.requestBodyString
-        errorBodyString = source.errorBodyString
-    }
-
-    fun getHttpErrorCode() = HttpErrorCode.from(httpCode)
+    constructor(source: HttpProtocolException) : this(
+                source.url,
+                source.method,
+                source.headers,
+                source.httpCode,
+                source.httpMessage,
+                source.innerCode,
+                source.innerMessage,
+                source.requestBodyString,
+                source.errorBodyString,
+                source.message,
+                source.cause
+            )
 
     override fun toString(): String {
-        return "HttpProtocolException(url='$url', method='$method', headers=$headers, httpCode=$httpCode, httpMessage='$httpMessage', innerCode=$innerCode, serverMessage='$serverMessage', requestBodyString='$requestBodyString', errorBodyString='$errorBodyString')"
+        return "HttpProtocolException(url='$url'," +
+                "method='$method'," +
+                "headers=$headers," +
+                "httpCode=$httpCode," +
+                "httpMessage='$httpMessage'," +
+                "innerCode=$innerCode," +
+                "innerMessage='$innerMessage'," +
+                "requestBodyString='$requestBodyString'," +
+                "errorBodyString='$errorBodyString')"
+    }
+
+    abstract class BaseBuilder(
+        var httpCode: Int,
+        var httpMessage: String,
+        val cause: Throwable?,
+        rawResponse: Response?
+    ) {
+
+        val url: String
+        val method: String
+        val headers: Map<String, String>
+
+        val requestBodyString: String
+        val errorBodyString: String
+
+        init {
+
+            val request = rawResponse?.request()
+            url = request?.url()?.toString() ?: EMPTY_STRING
+            method = request?.method() ?: EMPTY_STRING
+            headers = headersToMap(request?.headers())
+
+            requestBodyString = if (request != null) {
+                try {
+                    requestBodyToString(request)
+                } catch (e: RuntimeException) {
+                    EMPTY_STRING
+                }
+            } else {
+                EMPTY_STRING
+            }
+
+            errorBodyString = if (!isResponseOk(httpCode)) {
+                try {
+                    responseBodyToString(rawResponse)
+                } catch (e: RuntimeException) {
+                    EMPTY_STRING
+                }
+            } else {
+                EMPTY_STRING
+            }
+        }
+
+        abstract fun build(): HttpProtocolException
     }
 
     /**
@@ -81,99 +164,67 @@ open class HttpProtocolException(
      * @param converter конкретный [BaseErrorResponseConverter] для преобразования тела
      * ошибочного респонса в указанную сущность [Response]
      */
-    open class Builder<E : HttpProtocolException, Response : ResponseObj<*>>(
-        val cause: HttpException? = null,
-        call: Call<*>,
+    open class Builder<Response : ResponseObj<*>>(
+        cause: HttpException? = null,
         converter: BaseErrorResponseConverter<Response>? = null,
         gson: Gson? = null
+    ) : BaseBuilder(
+        cause?.code() ?: HttpErrorCode.UNKNOWN.code,
+        cause?.message() ?: EMPTY_STRING,
+        cause,
+        cause?.response()?.raw()
     ) {
 
-        val url: String
-        val method: String
-        val headers: Map<String, String>
-        var httpCode: Int
-        var httpMessage: String
-
         var innerCode: Int
-        var serverMessage: String
-
-        val requestBodyString: String
-        val errorBodyString: String
+        var innerMessage: String
 
         init {
 
-            val rawResponse = cause?.response()
-
-            val request = rawResponse?.raw()?.request()
-            url = request?.url()?.toString() ?: EMPTY_STRING
-            method = request?.method() ?: EMPTY_STRING
-            headers = headersToMap(request?.headers())
-
-            requestBodyString = requestBodyToString(call.request())
-
-            val responseBody = rawResponse?.errorBody()
-
-            errorBodyString = responseBody?.let {
-                try {
-                    it.string()
-                } catch (e: IOException) {
-                    Log.e("HttpProtocolException", "An IOException occurred during string(): $e")
-                    null
-                }
-            } ?: EMPTY_STRING
-
-            val response: Response? = if (gson != null) converter?.convert(gson, url, errorBodyString) else null
+            val response: Response? =
+                if (gson != null) converter?.convert(gson, url, errorBodyString) else null
 
             if (response != null) {
                 response.errorCode.let { errorCode ->
                     if (errorCode != null && errorCode != 0) {
                         innerCode = errorCode
-                        serverMessage = response.errorMessage ?: EMPTY_STRING
+                        innerMessage = response.errorMessage ?: EMPTY_STRING
                     } else {
                         innerCode = NO_ERROR
-                        serverMessage = EMPTY_STRING
+                        innerMessage = EMPTY_STRING
                     }
                 }
             } else {
                 innerCode = NO_ERROR
-                serverMessage = EMPTY_STRING
+                innerMessage = EMPTY_STRING
             }
 
-            this.httpMessage = cause?.message() ?: EMPTY_STRING
-            this.httpCode = cause?.code() ?: HTTP_CODE_SUCCESS
+
         }
 
-        fun setHttpMessage(message: String): Builder<E, Response> {
-            this.httpMessage = message
-            return this
-        }
+        override fun build() = HttpProtocolException(this)
+    }
 
-        fun setHttpCode(code: Int): Builder<E, Response> {
-            this.httpCode = code
-            return this
-        }
+    open class RawBuilder(rawResponse: Response?, cause: Throwable?) : BaseBuilder(
+        rawResponse?.code() ?: HttpErrorCode.UNKNOWN.code,
+        rawResponse?.message() ?: EMPTY_STRING,
+        cause,
+        rawResponse,
+    ) {
 
-        fun setInnerCode(code: Int): Builder<E, Response> {
-            this.innerCode = code
-            return this
-        }
-
-        fun setServerMessage(message: String): Builder<E, Response> {
-            this.serverMessage = message
-            return this
-        }
-
-        open fun build() = HttpProtocolException(this)
+        override fun build() = HttpProtocolException(this)
     }
 
     companion object {
 
-        private fun prepareMessage(httpMessage: String, code: Int, url: String, developerMessage: String?, innerCode: Int): String {
-            return " httpCode=" + code + "\n" +
-                    ", httpMessage='" + httpMessage + "'" +
-                    ", url='" + url + "'" + "\n" +
-                    ", innerCode=" + innerCode +
-                    ", serverMessage='" + developerMessage + "'"
+        private fun prepareMessage(cause: Throwable?, vararg parts: String): String {
+            val partsList = mutableListOf<String>()
+            cause?.localizedMessage?.let {
+                partsList.add(it)
+            }
+            partsList.addAll(parts)
+            return TextUtils.join(", ", partsList.filter {
+                it.isNotEmpty()
+            })
         }
     }
 }

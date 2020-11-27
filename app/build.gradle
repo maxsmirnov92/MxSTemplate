@@ -113,6 +113,7 @@ android {
 
     kotlinOptions {
         jvmTarget = '1.8'
+        freeCompilerArgs = ["$jvmDefaultArg"]
     }
 
     buildFeatures {
@@ -126,6 +127,8 @@ dependencies {
 //    implementation project(":core-common")
     implementation project(":core-network")
 
+//    implementation "androidx.fragment:fragment:$androidxFragmentVersion"
+
     // Dagger
     implementation "com.google.dagger:dagger:$daggerVersion"
     implementation "com.google.dagger:dagger-android-support:$daggerVersion"
@@ -136,7 +139,7 @@ dependencies {
     // Room
     implementation "androidx.room:room-runtime:$roomPersistenceVersion"
     kapt "androidx.room:room-compiler:$roomPersistenceVersion"
-    androidTestImplementation "androidx.room:room-testing:$roomPersistenceVersion"
+    implementation "androidx.room:room-ktx:$roomPersistenceVersion"
 
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
@@ -159,4 +162,5 @@ dependencies {
     androidTestImplementation "androidx.test:rules:$testCoreVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     androidTestImplementation "androidx.test:runner:$testCoreVersion"
+    androidTestImplementation "androidx.room:room-testing:$roomPersistenceVersion"
 }

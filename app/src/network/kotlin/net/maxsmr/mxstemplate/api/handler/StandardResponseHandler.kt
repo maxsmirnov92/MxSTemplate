@@ -2,7 +2,7 @@ package net.maxsmr.mxstemplate.api.handler
 
 import android.content.Context
 import net.maxsmr.core_network.error.exception.inner.BaseApiException
-import net.maxsmr.core_network.error.handler.error.ErrorHandler
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_network.error.handler.response.BaseResponseHandler
 import net.maxsmr.core_network.model.request.api.IApiMapper
 import net.maxsmr.core_network.model.response.ResponseObj

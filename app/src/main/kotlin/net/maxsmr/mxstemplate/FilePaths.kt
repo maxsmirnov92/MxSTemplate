@@ -5,8 +5,8 @@ import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.os.Build
 import android.os.Build.VERSION_CODES.Q
 import android.os.Environment
-import net.maxsmr.commonutils.data.FileHelper.isExternalStorageMountedAndWritable
-import net.maxsmr.commonutils.data.FileHelper.isExternalStorageMountedReadOnly
+import net.maxsmr.commonutils.android.media.isExternalStorageMountedAndWritable
+import net.maxsmr.commonutils.android.media.isExternalStorageMountedReadOnly
 import net.maxsmr.commonutils.data.text.EMPTY_STRING
 import net.maxsmr.core_common.BaseApplication
 import java.io.File

@@ -27,20 +27,19 @@ import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageActi
 import net.maxsmr.commonutils.android.gui.actions.message.SnackMessageAction
 import net.maxsmr.commonutils.android.gui.actions.message.ToastMessageAction
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
-
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.BiFunctionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
 import net.maxsmr.commonutils.rx.live.event.VmListEvent
 import net.maxsmr.core_common.BaseApplication
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.EMPTY_ACTION
 import net.maxsmr.core_common.arch.rx.ON_ERROR_MISSING
 import net.maxsmr.core_common.arch.rx.callinfo.*
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
-import net.maxsmr.core_common.ui.dialog.ProgressDialogFragment
 import net.maxsmr.core_common.ui.actions.NavigationAction
-
+import net.maxsmr.core_common.ui.dialog.ProgressDialogFragment
 
 private const val ARG_CURRENT_SCREEN_DATA = "current_screen_data"
 
@@ -52,7 +51,12 @@ private const val ARG_CURRENT_SCREEN_DATA = "current_screen_data"
 abstract class BaseViewModel<SD : BaseScreenData>(
     protected val savedStateHandle: SavedStateHandle,
     protected val schedulersProvider: SchedulersProvider,
-    protected val stringsProvider: StringsProvider
+    protected val stringsProvider: StringsProvider,
+    /**
+     * Выставить в производном классе при необходимости
+     * или оставить тот, что из модуля
+     */
+    protected var errorHandler: ErrorHandler?
 ) : ViewModel(), LifecycleObserver {
 
     val navigationCommands: MutableLiveData<VmListEvent<NavigationAction>> = MutableLiveData()
@@ -67,17 +71,19 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     val hideMessageCommands: MutableLiveData<VmListEvent<DialogFragmentHideMessageAction>> =
         MutableLiveData()
 
+    /**
+     * Маппинг селекторов, привязанных к конкретной view:
+     * изначальная/пересозданная будет иметь свой селектор, далее применяемый в subscribe
+     */
+    private val freezeSelectorsMap = mutableMapOf<String, BehaviorSubject<Boolean>>()
+
+    private var currentFreezeSelector: BehaviorSubject<Boolean>? = null
+
     @Deprecated("use showMessageCommands or hideMessageCommands")
     val alertDialogMessageCommands: MutableLiveData<VmListEvent<AlertDialogMessageAction>> =
         MutableLiveData()
 
     private val disposables = CompositeDisposable()
-
-    /**
-     * Актуализируется по инициативе последней view, которая пользует данную VM
-     */
-    var freezeSelector: BehaviorSubject<Boolean>? = null
-
 
     init {
         Handler(Looper.getMainLooper()).post { onInitialized() }
@@ -87,6 +93,27 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     override fun onCleared() {
         super.onCleared()
         disposables.clear()
+    }
+
+    /**
+     * Должен быть вызван последней view, которая пользует данную VM
+     */
+    fun notifyResumed(tag: String) {
+        getCurrentSelector(tag).onNext(false)
+    }
+
+    fun notifyPaused(tag: String) {
+        getCurrentSelector(tag).onNext(true)
+    }
+
+    fun getCurrentSelector(tag: String): BehaviorSubject<Boolean> {
+        var selector = freezeSelectorsMap[tag]
+        if (selector == null) {
+            selector = BehaviorSubject.createDefault(false)
+            freezeSelectorsMap[tag] = selector
+        }
+        currentFreezeSelector = selector
+        return selector
     }
 
     /**
@@ -155,6 +182,10 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         // do nothing
     }
 
+    /**
+     * @return true, если обработка в [errorHandler] для данной ошибки нужна
+     */
+    protected open fun shouldHandleError(e: Throwable, callInfo: BaseCallInfo) = true
 
     /**
      * Стандартная обработка ошибки из consumer'а
@@ -163,8 +194,11 @@ abstract class BaseViewModel<SD : BaseScreenData>(
      *
      * @param e ошибка
      */
-    protected open fun handleError(e: Throwable, callInfo: BaseCallInfo) {
-        // override if needed
+    @CallSuper
+    open fun handleError(e: Throwable, callInfo: BaseCallInfo) {
+        if (shouldHandleError(e, callInfo)) {
+            errorHandler?.handleError(e)
+        }
     }
 
     protected fun showOrHideProgress(show: Boolean, tag: String) {
@@ -305,7 +339,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         maybe: Maybe<T>,
-        operator: MaybeOperatorFreeze<T>,
+        operator: MaybeOperatorFreeze<T>?,
         onSuccess: ConsumerSafe<T>,
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
@@ -328,7 +362,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun subscribe(
         completable: Completable,
-        operator: CompletableOperatorFreeze,
+        operator: CompletableOperatorFreeze?,
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
@@ -353,7 +387,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observer: LambdaObserver<T>
     ): Disposable {
 
-        return subscribe<T>(observable, createOperatorFreeze(replaceFrozenEventPredicate), observer)
+        return subscribe<T>(observable, createObservableOperatorFreeze(replaceFrozenEventPredicate), observer)
     }
 
 
@@ -371,7 +405,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
         return subscribe(
             observable,
-            createOperatorFreeze(replaceFrozenEventPredicate),
+            createObservableOperatorFreeze(replaceFrozenEventPredicate),
             onNext,
             onError
         )
@@ -385,7 +419,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observer: LambdaObserver<T>
     ): Disposable {
 
-        return subscribe<T>(observable, createOperatorFreeze(), observer)
+        return subscribe<T>(observable, createObservableOperatorFreeze(), observer)
     }
 
     /**
@@ -396,7 +430,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onNext: ConsumerSafe<T>
     ): Disposable {
 
-        return subscribe(observable, createOperatorFreeze(), onNext, ON_ERROR_MISSING)
+        return subscribe(observable, createObservableOperatorFreeze(), onNext, ON_ERROR_MISSING)
     }
 
 
@@ -423,7 +457,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onError: ConsumerSafe<Throwable>
     ): Disposable {
 
-        return subscribe(observable, createOperatorFreeze(), onNext, onComplete, onError)
+        return subscribe(observable, createObservableOperatorFreeze(), onNext, onComplete, onError)
     }
 
     protected fun <T> subscribe(
@@ -447,13 +481,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
-
-        return subscribe(
-            completable,
-            CompletableOperatorFreeze(freezeSelector),
-            onComplete,
-            onError
-        )
+        return subscribe(completable, createCompletableOperatorFreeze(), onComplete, onError)
     }
 
 
@@ -463,8 +491,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
-
-        return subscribe(maybe, MaybeOperatorFreeze(freezeSelector), onSuccess, onComplete, onError)
+        return subscribe(maybe, createMaybeOperatorFreeze(), onSuccess, onComplete, onError)
     }
 
     /**
@@ -673,7 +700,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         return subscribe(
             observable.subscribeOn(schedulersProvider.worker()),
             onNext,
-            ConsumerSafe { e -> handleError(e, onError, lastSubscribedCallInfo) })
+            { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
 
     protected fun <T> subscribeIoHandleError(
@@ -688,7 +715,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
             observable.subscribeOn(schedulersProvider.worker()),
             onNext,
             onComplete,
-            ConsumerSafe { e -> handleError(e, onError, lastSubscribedCallInfo) })
+            { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
 
     protected fun <T> subscribeIoHandleError(
@@ -700,7 +727,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         return subscribe(
             single.subscribeOn(schedulersProvider.worker()),
             onSuccess,
-            ConsumerSafe { e -> handleError(e, onError, lastSubscribedCallInfo) })
+            { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
 
     protected fun subscribeIoHandleError(
@@ -712,7 +739,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         return subscribe(
             completable.subscribeOn(schedulersProvider.worker()),
             onComplete,
-            ConsumerSafe { e -> handleError(e, onError, lastSubscribedCallInfo) })
+            { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
 
     protected fun <T> subscribeIoHandleError(
@@ -726,7 +753,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
             maybe.subscribeOn(schedulersProvider.worker()),
             onSuccess,
             onComplete,
-            ConsumerSafe { e -> handleError(e, onError, lastSubscribedCallInfo) })
+            { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
 
 
@@ -762,7 +789,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         return subscribeTakeLastFrozen(
             observable.subscribeOn(schedulersProvider.worker()),
             onNext,
-            ConsumerSafe { e -> handleError(e, onError, lastSubscribedCallInfo) })
+            { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
 
     //endregion
@@ -1009,19 +1036,24 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         }
     }
 
-    protected fun <T> createOperatorFreeze(replaceFrozenEventPredicate: BiFunctionSafe<T, T, Boolean>): ObservableOperatorFreeze<T>? {
-        return if (freezeSelector != null) ObservableOperatorFreeze(
-            freezeSelector,
-            replaceFrozenEventPredicate
-        ) else null
+    protected fun <T> createObservableOperatorFreeze(replaceFrozenEventPredicate: BiFunctionSafe<T, T, Boolean>): ObservableOperatorFreeze<T>? {
+        return if (currentFreezeSelector != null)  ObservableOperatorFreeze(currentFreezeSelector, replaceFrozenEventPredicate) else null
     }
 
-    protected fun <T> createOperatorFreeze(): ObservableOperatorFreeze<T>? {
-        return if (freezeSelector != null) ObservableOperatorFreeze(freezeSelector) else null
+    protected fun <T> createObservableOperatorFreeze(): ObservableOperatorFreeze<T>? {
+        return if (currentFreezeSelector != null) ObservableOperatorFreeze(currentFreezeSelector) else null
     }
 
     protected fun <T> createSingleOperatorFreeze(): SingleOperatorFreeze<T>? {
-        return if (freezeSelector != null) SingleOperatorFreeze(freezeSelector) else null
+        return if (currentFreezeSelector != null) SingleOperatorFreeze(currentFreezeSelector) else null
+    }
+
+    protected fun createCompletableOperatorFreeze(): CompletableOperatorFreeze? {
+        return if (currentFreezeSelector != null)  CompletableOperatorFreeze(currentFreezeSelector) else null
+    }
+
+    protected fun <T> createMaybeOperatorFreeze(): MaybeOperatorFreeze<T>? {
+        return if (currentFreezeSelector != null)  MaybeOperatorFreeze(currentFreezeSelector) else null
     }
 
     protected fun <Action, Actor> Collection<BaseTaggedViewModelAction<Actor>>.findActionByTag(
@@ -1048,5 +1080,4 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         handleError(e, callInfo)
         onError?.accept(e)
     }
-
 }

@@ -44,9 +44,8 @@ class CallAdapterFactory(
      */
     protected fun createHttpProtocolExceptionByCause(cause: HttpException, call: Call<*>) =
             // в кач-ве примера используется AuthAccessTokenErrorResponseConverter
-            HttpProtocolException.Builder<HttpProtocolException, ResponseObj<*>>(
+            HttpProtocolException.Builder(
                     cause,
-                    call,
                     DefaultErrorResponseConverter(),
                     gson
             ).build()
@@ -62,7 +61,7 @@ class CallAdapterFactory(
 
         val httpError = createHttpProtocolExceptionByCause(e, call)
 
-        val wrappedError = when (httpError.getHttpErrorCode()) {
+        val wrappedError = when (httpError.httpErrorCode) {
             HttpErrorCode.NOT_MODIFIED -> NotModifiedException(stringsProvider.getString(R.string.http_not_modified_error_text), httpError)
             HttpErrorCode.BAD_REQUEST -> BadRequestError(stringsProvider.getString(R.string.http_bad_request_error_text), httpError)
             HttpErrorCode.NOT_AUTHORIZED -> NonAuthorizedException(stringsProvider.getString(R.string.http_not_authorized_error_text), httpError)

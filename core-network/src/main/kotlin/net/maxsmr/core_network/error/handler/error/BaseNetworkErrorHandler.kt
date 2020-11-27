@@ -2,6 +2,7 @@ package net.maxsmr.core_network.error.handler.error
 
 import android.util.Log
 import io.reactivex.exceptions.CompositeException
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_network.error.exception.ConversionException
 import net.maxsmr.core_network.error.exception.NetworkException
 import net.maxsmr.core_network.error.exception.NoInternetException
@@ -10,7 +11,8 @@ import net.maxsmr.core_network.error.exception.NoInternetException
  * Базовый класс для обработки ошибок, возникающий при работе с Observable
  * в базовой ViewModel
  */
-abstract class BaseNetworkErrorHandler : ErrorHandler {
+abstract class BaseNetworkErrorHandler :
+    ErrorHandler {
 
     override fun handleError(err: Throwable) {
         Log.e("BaseNetworkErrorHandler", "handle error: $err")

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="download_notification_progress_text">Загрузка выполняется</string>
+    <string name="download_notification_success_text">Загрузка успешна</string>
+    <string name="download_notification_success_view_button">Посмотреть</string>
+    <string name="download_notification_success_share_button">Поделиться</string>
+    <string name="download_notification_failed_text_format">Загрузка завершилась с ошибкой: %s</string>
+    <string name="download_notification_failed_text">Загрузка завершилась с неизвестной ошибкой</string>
+</resources>

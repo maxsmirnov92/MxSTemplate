@@ -4,10 +4,9 @@ import android.content.Context
 import dagger.Binds
 import dagger.Module
 import dagger.android.support.AndroidSupportInjectionModule
-import net.maxsmr.core_network.error.handler.error.ErrorHandler
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.mxstemplate.TemplateApp
 import net.maxsmr.mxstemplate.api.handler.StandardErrorHandler
-import net.maxsmr.mxstemplate.db.AppDataBase
 import net.maxsmr.mxstemplate.di.PerApplication
 
 @Module(includes = [AndroidSupportInjectionModule::class])

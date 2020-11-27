@@ -13,13 +13,12 @@ import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
 import net.maxsmr.core_common.BaseApplication
 import net.maxsmr.core_common.arch.StringsProvider
-import net.maxsmr.core_common.arch.rx.callinfo.BaseCallInfo
 import net.maxsmr.core_common.arch.rx.isDisposableActive
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.core_common.ui.viewmodel.BaseScreenData
 import net.maxsmr.core_network.connection.ConnectionProvider
-import net.maxsmr.core_network.error.handler.error.ErrorHandler
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.networkutils.ConnectivityChecker
 
 /**
@@ -29,15 +28,11 @@ import net.maxsmr.networkutils.ConnectivityChecker
 @Suppress("UNCHECKED_CAST")
 abstract class BaseNetworkingViewModel<SD : BaseScreenData>(
     protected val connectionProvider: ConnectionProvider,
-    /**
-     * Выставить в производном классе при необходимости
-     * или оставить тот, что из модуля
-     */
-    protected var errorHandler: ErrorHandler,
     savedStateHandle: SavedStateHandle,
     schedulersProvider: SchedulersProvider,
-    stringsProvider: StringsProvider
-) : BaseViewModel<SD>(savedStateHandle, schedulersProvider, stringsProvider), LifecycleObserver {
+    stringsProvider: StringsProvider,
+    errorHandler: ErrorHandler
+) : BaseViewModel<SD>(savedStateHandle, schedulersProvider, stringsProvider, errorHandler), LifecycleObserver {
 
     private val networkStatus = ConnectivityChecker(BaseApplication.context)
 
@@ -66,28 +61,11 @@ abstract class BaseNetworkingViewModel<SD : BaseScreenData>(
         subscribeOnConnectionChanges()
     }
 
-    /**
-     * Стандартная обработка ошибки из consumer'а
-     *
-     * Переопределяем в случае если нужно специфичная обработка
-     *
-     * @param e ошибка
-     */
-    @CallSuper
-    override fun handleError(e: Throwable, callInfo: BaseCallInfo) {
-        if (shouldHandleError(e, callInfo)) {
-            errorHandler.handleError(e)
-        }
-    }
-
     protected open fun handleConnectionChanged(isConnected: Boolean) {
         // override if needed
     }
 
-    /**
-     * @return true, если обработка в [errorHandler] для данной ошибки нужна
-     */
-    protected open fun shouldHandleError(e: Throwable, callInfo: BaseCallInfo) = true
+
 
 
     //region subscribeIoAutoReload
