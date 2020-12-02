@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
 android {
@@ -55,7 +56,9 @@ dependencies {
     api "androidx.multidex:multidex:$multidexVersion"
 
     api project(path: ':commonutils')
+    api project(path: ':permissionchecker')
 //    api "net.maxsmr:commonutils:$commonUtilsVersion"
+//    api "net.maxsmr:permissionchecker:permissionCheckerVersion"
     api "net.maxsmr:recyclerview-lib:$recyclerViewLibVersion"
     api "net.maxsmr:jugglerhelper:$jugglerHelperVersion"
 
@@ -65,7 +68,6 @@ dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-    api project(path: ':commonutils')
 
     // TODO remove all below after bintray:
 
@@ -95,4 +97,6 @@ dependencies {
 
     // Tinkoff decoro
     api "ru.tinkoff.decoro:decoro:$tinkoffDecoroVersion"
+
+    api "pub.devrel:easypermissions:$easyPermissionsVersion"
 }

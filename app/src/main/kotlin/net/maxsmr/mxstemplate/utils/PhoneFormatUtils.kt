@@ -33,32 +33,34 @@ fun normalizePhoneNumber(
     if (phoneNumber.isNullOrEmpty()) return EMPTY_STRING
     var prefixReplaceWith = prefixReplaceWith
     var normalized = if (checkDigits) phoneNumber.replace("[^0-9+]".toRegex(), EMPTY_STRING) else phoneNumber.toString()
-    val seven = PHONE_RUS_PREFIX_SEVEN_
-    val plusSeven = PHONE_RUS_PREFIX_PLUS_SEVEN
-    val eight = PHONE_RUS_PREFIX_EIGHT
-    val nine = PHONE_RUS_PREFIX_NINE
-    val replaceSubstring = when {
-        seven != prefixReplaceWith && normalized.startsWith(seven) -> {
-            seven
+    if (prefixReplaceWith.isNotEmpty()) {
+        val seven = PHONE_RUS_PREFIX_SEVEN_
+        val plusSeven = PHONE_RUS_PREFIX_PLUS_SEVEN
+        val eight = PHONE_RUS_PREFIX_EIGHT
+        val nine = PHONE_RUS_PREFIX_NINE
+        val replaceSubstring = when {
+            seven != prefixReplaceWith && normalized.startsWith(seven) -> {
+                seven
+            }
+            plusSeven != prefixReplaceWith && normalized.startsWith(plusSeven) -> {
+                plusSeven
+            }
+            eight != prefixReplaceWith && normalized.startsWith(eight) -> {
+                eight
+            }
+            nine != prefixReplaceWith && normalized.startsWith(nine) -> {
+                nine
+            }
+            else -> {
+                EMPTY_STRING
+            }
         }
-        plusSeven != prefixReplaceWith && normalized.startsWith(plusSeven) -> {
-            plusSeven
+        if (replaceSubstring == nine) {
+            prefixReplaceWith += nine
         }
-        eight != prefixReplaceWith && normalized.startsWith(eight) -> {
-            eight
+        if (replaceSubstring.isNotEmpty()) {
+            normalized = normalized.replaceFirst(replaceSubstring, prefixReplaceWith)
         }
-        nine != prefixReplaceWith && normalized.startsWith(nine) -> {
-            nine
-        }
-        else -> {
-            EMPTY_STRING
-        }
-    }
-    if (replaceSubstring == nine) {
-        prefixReplaceWith += nine
-    }
-    if (replaceSubstring.isNotEmpty()) {
-        normalized = normalized.replaceFirst(replaceSubstring, prefixReplaceWith)
     }
     if (normalized == prefixReplaceWith) {
         normalized = EMPTY_STRING
@@ -148,9 +150,10 @@ fun TextView.setPhoneFormattedText(
     hideHardcodedHead: Boolean = false,
     isDigit: Boolean = true,
     prefix: String = EMPTY_STRING,
+    installOnAndFill: Boolean = false,
     applyWatcher: Boolean = true,
     isDistinct: Boolean = true
-) = setFormattedText(text, createDefaultPhoneMask(isTerminated, hideHardcodedHead, isDigit), prefix, applyWatcher, isDistinct) {
+) = setFormattedText(text, createDefaultPhoneMask(isTerminated, hideHardcodedHead, isDigit), prefix, installOnAndFill, applyWatcher, isDistinct) {
     isPhoneNumberRusValid(it)
 }
 
@@ -171,8 +174,9 @@ fun createDefaultPhoneMask(
 fun createDefaultPhoneWatcher(
     isTerminated: Boolean = true,
     hideHardcodedHead: Boolean = false,
-    isDigit: Boolean = true
-) = MaskFormatWatcher(createDefaultPhoneMask(isTerminated, hideHardcodedHead, isDigit))
+    isDigit: Boolean = true,
+    maskConfigurator: ((MaskImpl) -> Unit)? = null
+) = createWatcher(createDefaultPhoneMask(isTerminated, hideHardcodedHead, isDigit), maskConfigurator)
 
 /**
  * Выставить [createDefaultPhoneWatcher] + вручную prefix, т.к. hideHardcodedHead = false недостаточно
@@ -181,9 +185,10 @@ fun createDefaultPhoneWatcher(
 fun TextView.installDefaultPhoneWatcher(
     isTerminated: Boolean = true,
     hideHardcodedHead: Boolean = false,
-    isDigit: Boolean = true
+    isDigit: Boolean = true,
+    maskConfigurator: ((MaskImpl) -> Unit)? = null
 ) {
-    createDefaultPhoneWatcher(isTerminated, hideHardcodedHead, isDigit).installOn(this)
+    createDefaultPhoneWatcher(isTerminated, hideHardcodedHead, isDigit, maskConfigurator).installOn(this)
     if (!hideHardcodedHead) {
         text = PHONE_RUS_PREFIX_PLUS_SEVEN
     }

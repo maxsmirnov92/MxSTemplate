@@ -10,10 +10,7 @@ import android.os.Build.VERSION_CODES.Q
 import android.provider.MediaStore.Downloads.*
 import androidx.core.content.FileProvider
 import net.maxsmr.commonutils.android.media.*
-import net.maxsmr.commonutils.data.IStreamNotifier
-import net.maxsmr.commonutils.data.createFileOrThrow
-import net.maxsmr.commonutils.data.deleteFileOrThrow
-import net.maxsmr.commonutils.data.toFosOrThrow
+import net.maxsmr.commonutils.data.*
 import net.maxsmr.core_network.error.exception.http.HttpProtocolException
 import net.maxsmr.core_network.utils.executeCall
 import net.maxsmr.core_network.utils.isResumeDownloadSupported
@@ -89,10 +86,10 @@ class OkHttpDownloader(
     )
 
     private fun listTitlesLegacy(): List<String> =
-        downloadDir.listFiles()
-            ?.filter { it.isFile && it.exists() }
-            ?.map { it.name }
-            ?.sorted() ?: emptyList()
+        getFiles(downloadDir, GetMode.FILES, depth = 0)
+            .filter { isFileExists(it) }
+            .map { it.name }
+            .sorted()
 
     @TargetApi(Q)
     @Throws(RuntimeException::class)

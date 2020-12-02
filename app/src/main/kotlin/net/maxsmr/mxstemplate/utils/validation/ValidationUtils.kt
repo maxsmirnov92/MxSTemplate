@@ -2,28 +2,25 @@ package net.maxsmr.mxstemplate.utils.validation
 
 import net.maxsmr.commonutils.data.conversion.format.parseDate
 import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.mxstemplate.utils.PHONE_RUS_PREFIX_PLUS_SEVEN
 import net.maxsmr.mxstemplate.utils.normalizePhoneNumber
 import java.text.SimpleDateFormat
 
 const val REG_EX_PHONE_NUMBER_RUS = "^((\\+7|7|8)+([0-9]){10})\$"
-const val REG_EX_PHONE_NUMBER = "^\\d{10}$"
+const val REG_EX_PHONE_NUMBER_RUS_WITHOUT_PREFIX = "^\\d{10}$"
 const val REG_EX_EMAIL = "^[^ ]+@.[^!#\$%&'*+/=?^_`{|}~ -]+\\..[^!#\$%&'*+/=?^_`{|}~0-9 -]{1,6}\$"
 const val REG_EX_EMAIL_ALT = "^.+@.+\\..+$"
 const val REG_EX_SNILS = "^\\d{11}$"
 
 @JvmOverloads
-fun isPhoneNumberRusValid(phone: String?, shouldNormalize: Boolean = true): Boolean =
-        validate((if (shouldNormalize) normalizePhoneNumber(phone) else phone), REG_EX_PHONE_NUMBER_RUS)
-
-/**
- * Проверка валидности формата phone [ValidationUtilsKt.validate]
- *
- * @param phone [String]
- * @return true - если формат соответствует формату [ValidationUtilsKt.REG_EX_PHONE_NUMBER]
- */
-fun isPhoneValid(phone: String?): Boolean =
-        validate(phone, REG_EX_PHONE_NUMBER)
-
+fun isPhoneNumberRusValid(
+        phone: String?,
+        normalize: Boolean = true,
+        withoutPrefix: Boolean = false
+): Boolean {
+        val normalized = if (normalize) normalizePhoneNumber(phone, if (withoutPrefix) EMPTY_STRING else PHONE_RUS_PREFIX_PLUS_SEVEN) else phone
+        return validate(normalized, if (!withoutPrefix) REG_EX_PHONE_NUMBER_RUS else REG_EX_PHONE_NUMBER_RUS_WITHOUT_PREFIX)
+}
 
 /**
  * Проверка валидности формата email {@link ValidationUtilsKt#validate}

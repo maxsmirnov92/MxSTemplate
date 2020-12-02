@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import me.ilich.juggler.states.State
-import net.maxsmr.mxstemplate.feature.test.TestState
+import net.maxsmr.mxstemplate.feature.test.ui.TestState
 import net.maxsmr.mxstemplate.ui.common.BaseActivity
 
 class MainActivity: BaseActivity() {

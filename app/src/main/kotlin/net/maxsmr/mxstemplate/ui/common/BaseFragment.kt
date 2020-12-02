@@ -32,6 +32,7 @@ import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
 import net.maxsmr.mxstemplate.R
 import net.maxsmr.mxstemplate.di.ui.BaseVmFactory
+import pub.devrel.easypermissions.EasyPermissions
 import javax.inject.Inject
 
 abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasAndroidInjector {
@@ -94,6 +95,11 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         viewModel.saveToBundle(outState)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
     protected abstract fun onViewCreated(view: View, savedInstanceState: Bundle?, viewModel: VM)

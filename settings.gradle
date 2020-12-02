@@ -1,4 +1,4 @@
-include ':commonutils', ':networkutils', ':tasksutils', ':core-common', ':core-network', ':app'
+include ':commonutils', ':tasksutils', ':networkutils', ':permissionchecker', ':core-common', ':core-network', ':app'
 //':easyadapter',
 //project(':easyadapter').projectDir = new File(settingsDir, '../MxSUiLibrary/easyadapter')
 rootProject.name = "MxSTemplate"

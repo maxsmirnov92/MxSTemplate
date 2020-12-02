@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MxSTemplate</string>
+    <string name="dialog_message_permission_granted_format">Permission(s) %s granted!</string>
 </resources>

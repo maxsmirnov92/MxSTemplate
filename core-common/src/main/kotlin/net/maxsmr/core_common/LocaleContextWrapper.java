@@ -1,4 +1,4 @@
-package net.maxsmr.core_common.utils;
+package net.maxsmr.core_common;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -8,7 +8,11 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.os.LocaleList;
 
+import net.maxsmr.commonutils.android.SdkVersionsKt;
+
 import java.util.Locale;
+
+import static net.maxsmr.commonutils.android.SdkVersionsKt.isAtLeastNougat;
 
 /**
  * ContextWrapper для использования заданного языка локализации
@@ -38,7 +42,7 @@ public class LocaleContextWrapper extends ContextWrapper {
 
         res.updateConfiguration(configuration, res.getDisplayMetrics());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (isAtLeastNougat()) {
             context = context.createConfigurationContext(configuration);
         }
         return new ContextWrapper(context);

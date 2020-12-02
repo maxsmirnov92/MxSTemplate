@@ -3,7 +3,7 @@ package net.maxsmr.mxstemplate.feature.test.di
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
 import net.maxsmr.mxstemplate.di.PerFragment
-import net.maxsmr.mxstemplate.feature.test.TestFragment
+import net.maxsmr.mxstemplate.feature.test.ui.TestFragment
 
 @Module
 interface TestScreenModule {

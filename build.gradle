@@ -11,7 +11,7 @@ buildscript {
 
         gradlePluginVersion = '4.0.1'
         buildToolsVersion = '29.0.2'
-        kotlinGradlePluginVersion = '1.4.0'
+        kotlinGradlePluginVersion = '1.4.20'
         kotlinVersion = '1.4.0'
 
         // Support
@@ -35,11 +35,10 @@ buildscript {
 
         roomPersistenceVersion = '2.2.5'
 
-        easyPermissionsVersion = '3.0.0'
-
         // Mx Utils
         commonUtilsVersion = '1.1.0.2'
         networkUtilsVersion = '1.0.9.3'
+        permissionCheckerVersion = '1.1.9.0'
         jugglerHelperVersion = '1.1.0.0'
         recyclerViewLibVersion = '1.1.2.2'
 
@@ -77,6 +76,8 @@ buildscript {
 
         lifecycleVersion = '2.2.0'
         tinkoffDecoroVersion = '1.3.5'
+
+        easyPermissionsVersion = '3.0.0'
     }
 
     repositories {

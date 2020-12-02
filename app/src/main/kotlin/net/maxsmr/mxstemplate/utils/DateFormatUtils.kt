@@ -1,11 +1,11 @@
 package net.maxsmr.mxstemplate.utils
 
 import android.widget.TextView
+import net.maxsmr.commonutils.data.conversion.format.createWatcher
 import net.maxsmr.commonutils.data.conversion.format.setFormattedText
 import net.maxsmr.mxstemplate.utils.validation.isDateValid
 import ru.tinkoff.decoro.MaskImpl
 import ru.tinkoff.decoro.parser.UnderscoreDigitSlotsParser
-import ru.tinkoff.decoro.watchers.MaskFormatWatcher
 
 const val MONTH_YEAR_MASK = "__.____"
 const val YEAR_MONTH_DAY_MASK = "____.__.__"
@@ -48,6 +48,6 @@ fun createMonthYearMask() =
 fun createYearMonthDayMask() =
     MaskImpl.createTerminated(UnderscoreDigitSlotsParser().parseSlots(YEAR_MONTH_DAY_MASK))
 
-fun createMonthYearWatcher() = MaskFormatWatcher(createMonthYearMask())
+fun createMonthYearWatcher() = createWatcher(createMonthYearMask())
 
-fun createYearMonthDayWatcher() = MaskFormatWatcher(createYearMonthDayMask())
+fun createYearMonthDayWatcher() = createWatcher(createYearMonthDayMask())

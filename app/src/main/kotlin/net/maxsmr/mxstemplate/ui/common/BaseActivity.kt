@@ -13,7 +13,7 @@ import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
-import net.maxsmr.core_common.utils.LocaleContextWrapper
+import net.maxsmr.core_common.LocaleContextWrapper
 import net.maxsmr.jugglerhelper.activities.BaseJugglerActivity
 import pub.devrel.easypermissions.EasyPermissions
 import java.util.*

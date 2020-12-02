@@ -1,4 +1,4 @@
-package net.maxsmr.mxstemplate.feature.test
+package net.maxsmr.mxstemplate.feature.test.ui
 
 import androidx.lifecycle.SavedStateHandle
 import net.maxsmr.core_common.arch.ErrorHandler
