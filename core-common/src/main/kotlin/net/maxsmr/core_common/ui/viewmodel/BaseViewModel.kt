@@ -1,16 +1,23 @@
 package net.maxsmr.core_common.ui.viewmodel
 
+import android.R
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.widget.Toast
 import androidx.annotation.CallSuper
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import com.agna.ferro.rx.CompletableOperatorFreeze
 import com.agna.ferro.rx.MaybeOperatorFreeze
 import com.agna.ferro.rx.ObservableOperatorFreeze
 import com.agna.ferro.rx.SingleOperatorFreeze
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.*
-import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.internal.functions.Functions
@@ -21,17 +28,16 @@ import io.reactivex.observers.DisposableSingleObserver
 import io.reactivex.subjects.BehaviorSubject
 import me.ilich.juggler.change.Remove
 import net.maxsmr.commonutils.android.gui.actions.BaseTaggedViewModelAction
+import net.maxsmr.commonutils.android.gui.actions.BaseViewModelAction
 import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentHideMessageAction
 import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentShowMessageAction
 import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.SnackMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.ToastMessageAction
+import net.maxsmr.commonutils.android.gui.actions.message.BaseMessageAction
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.BiFunctionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
 import net.maxsmr.commonutils.rx.live.event.VmListEvent
-import net.maxsmr.core_common.BaseApplication
 import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.EMPTY_ACTION
@@ -40,6 +46,7 @@ import net.maxsmr.core_common.arch.rx.callinfo.*
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.ui.actions.NavigationAction
 import net.maxsmr.core_common.ui.dialog.ProgressDialogFragment
+import kotlin.reflect.KProperty
 
 private const val ARG_CURRENT_SCREEN_DATA = "current_screen_data"
 
@@ -49,7 +56,7 @@ private const val ARG_CURRENT_SCREEN_DATA = "current_screen_data"
  */
 @Suppress("UNCHECKED_CAST")
 abstract class BaseViewModel<SD : BaseScreenData>(
-    protected val savedStateHandle: SavedStateHandle,
+    val state: SavedStateHandle,
     protected val schedulersProvider: SchedulersProvider,
     protected val stringsProvider: StringsProvider,
     /**
@@ -57,19 +64,22 @@ abstract class BaseViewModel<SD : BaseScreenData>(
      * или оставить тот, что из модуля
      */
     protected var errorHandler: ErrorHandler?
-) : ViewModel(), LifecycleObserver {
+) : ViewModel() {
 
     val navigationCommands: MutableLiveData<VmListEvent<NavigationAction>> = MutableLiveData()
 
-    val toastMessageCommands: MutableLiveData<VmListEvent<ToastMessageAction>> = MutableLiveData()
+    val toastMessageCommands: MutableLiveData<VmListEvent<BaseMessageAction<Toast, Context>>> = MutableLiveData()
 
-    val snackMessageCommands: MutableLiveData<VmListEvent<SnackMessageAction>> = MutableLiveData()
+    val snackMessageCommands: MutableLiveData<VmListEvent<BaseMessageAction<Snackbar, View>>> = MutableLiveData()
 
-    val showMessageCommands: MutableLiveData<VmListEvent<DialogFragmentShowMessageAction>> =
+    val showDialogCommands: MutableLiveData<VmListEvent<DialogFragmentShowMessageAction>> =
         MutableLiveData()
 
-    val hideMessageCommands: MutableLiveData<VmListEvent<DialogFragmentHideMessageAction>> =
+    val hideDialogCommands: MutableLiveData<VmListEvent<DialogFragmentHideMessageAction>> =
         MutableLiveData()
+
+    protected val KProperty<*>.persistableKey: String
+        get() = this@BaseViewModel.getPersistableKey(this)
 
     /**
      * Маппинг селекторов, привязанных к конкретной view:
@@ -133,8 +143,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     }
 
     fun doClose() {
-        navigationCommands.value =
-            navigationCommands.newEvent(NavigationAction(Remove.closeCurrentActivity(), null))
+        navigationCommands.setNewEvent(NavigationAction(Remove.closeCurrentActivity(), null))
     }
 
     /**
@@ -203,26 +212,26 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun showOrHideProgress(show: Boolean, tag: String) {
         if (show) {
-            showMessageCommands.value = showMessageCommands.newEvent(
+            showDialogCommands.value = showDialogCommands.newEvent(
                 DialogFragmentShowMessageAction(
                     tag,
-                    ProgressDialogFragment.instance(BaseApplication.context, false),
+                    ProgressDialogFragment.instance(false),
                     false
                 )
             )
         } else {
-            hideMessageCommands.value =
-                hideMessageCommands.newEvent(DialogFragmentHideMessageAction(tag))
+            hideDialogCommands.value =
+                hideDialogCommands.newEvent(DialogFragmentHideMessageAction(tag))
         }
     }
 
     protected fun showOkErrorDialog(tag: String, errorMessage: String) {
-        showMessageCommands.value = showMessageCommands.newEvent(
+        showDialogCommands.value = showDialogCommands.newEvent(
             DialogFragmentShowMessageAction(
                 tag,
-                TypedDialogFragment.DefaultTypedDialogBuilder(BaseApplication.context)
+                TypedDialogFragment.DefaultTypedDialogBuilder()
                     .setMessage(errorMessage)
-                    .setButtons(stringsProvider.getString(android.R.string.ok), null, null)
+                    .setButtons(stringsProvider.getString(R.string.ok), null, null)
                     .build()
             )
         )
@@ -1064,12 +1073,41 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     protected fun <A> MutableCollection<out BaseTaggedViewModelAction<A>>.removeActionsByTag(tag: String) =
         removeAll { it.tag == tag }
 
-    protected fun <T> LiveData<VmListEvent<T>>.newEvent(value: T): VmListEvent<T> {
-        return this.value?.new(value) ?: VmListEvent(value)
+    @JvmOverloads
+    protected fun <T: BaseViewModelAction<*>> LiveData<VmListEvent<T>>.newEvent(value: T, options: VmListEvent.AddOptions = VmListEvent.AddOptions()): VmListEvent<T> {
+        return this.value?.new(value, options) ?: VmListEvent(value, options)
     }
 
-    protected fun <T> LiveData<VmListEvent<T>>.newEvent(collection: Collection<T>): VmListEvent<T> {
+    protected fun <T: BaseViewModelAction<*>> LiveData<VmListEvent<T>>.newEvent(collection: Map<T, VmListEvent.AddOptions>): VmListEvent<T> {
         return this.value?.new(collection) ?: VmListEvent(collection)
+    }
+
+    @JvmOverloads
+    protected fun <T: BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewEvent(
+        value: T,
+        options: VmListEvent.AddOptions = VmListEvent.AddOptions(),
+        setOrPost: Boolean = true
+    ): VmListEvent<T> {
+        val event = newEvent(value, options)
+        if (setOrPost) {
+            this.value = event
+        } else {
+            postValue(event)
+        }
+        return event
+    }
+
+    protected fun <T: BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewEvent(
+        collection: Map<T, VmListEvent.AddOptions>,
+        setOrPost: Boolean = true
+    ): VmListEvent<T> {
+        val event = newEvent(collection)
+        if (setOrPost) {
+            this.value = event
+        } else {
+            postValue(event)
+        }
+        return event
     }
 
     private fun handleError(

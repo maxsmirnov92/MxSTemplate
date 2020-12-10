@@ -1,12 +1,15 @@
 package net.maxsmr.mxstemplate.ui.common
 
+import android.content.Context
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.annotation.CallSuper
 import androidx.lifecycle.*
 import androidx.savedstate.SavedStateRegistryOwner
 import com.agna.ferro.rx.MaybeOperatorFreeze
 import com.agna.ferro.rx.ObservableOperatorFreeze
+import com.google.android.material.snackbar.Snackbar
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
@@ -18,8 +21,8 @@ import net.maxsmr.commonutils.android.gui.actions.BaseViewModelAction
 import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentHideMessageAction
 import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentShowMessageAction
 import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.SnackMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.ToastMessageAction
+import net.maxsmr.commonutils.android.gui.actions.message.BaseMessageAction
+import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.holder.DialogFragmentsHolder
 import net.maxsmr.commonutils.rx.live.LiveMaybe
 import net.maxsmr.commonutils.rx.live.LiveObservable
@@ -48,7 +51,10 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
      */
     protected open val isSharedViewModel: Boolean = false
 
-    protected val dialogFragmentsHolder = DialogFragmentsHolder()
+    protected val dialogFragmentsHolder = DialogFragmentsHolder().apply {
+        // DialogFragment может быть показан только один в общем случае
+        showRule = DialogFragmentsHolder.ShowRule.SINGLE
+    }
 
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
@@ -115,45 +121,89 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open fun beforeRestoreFromBundle(savedInstanceState: Bundle?) {
         // override if needed
     }
+
     @CallSuper
     protected open fun subscribeOnActions(viewModel: VM) {
         subscribeOnDialogEvents()
-        viewModel.navigationCommands.observeListEvents { handleNavigationAction(it) }
-        viewModel.toastMessageCommands.observeListEvents { handleToastMessageAction(it) }
-        viewModel.snackMessageCommands.observeListEvents { handleSnackMessageAction(it) }
-        viewModel.showMessageCommands.observeListEvents { handleTypedDialogShowMessageAction(it) }
-        viewModel.hideMessageCommands.observeListEvents { handleTypedDialogHideMessageAction(it) }
-        viewModel.alertDialogMessageCommands.observeListEvents { handleDialogMessageAction(it) }
+        viewModel.navigationCommands.observeListEvents { action, _ -> handleNavigationAction(action.item) }
+        viewModel.toastMessageCommands.observeListEvents { action, listener ->
+            handleToastMessageAction(action, listener, false)
+            // слушать dismiss-колбеки здесь не надо, т.к. уже очистили свою очередь - показ разруливается системой
+        }
+        viewModel.snackMessageCommands.observeListEvents(removeEvents = false) { action, listener ->
+            handleSnackMessageAction(action, listener, true)
+        }
+        viewModel.showDialogCommands.observeListEvents(removeEvents = false) { action, listener ->
+            handleTypedDialogShowMessageAction(action, listener, true)
+        }
+        viewModel.hideDialogCommands.observeListEvents { action, _ -> handleTypedDialogHideMessageAction(action.item) }
+        viewModel.alertDialogMessageCommands.observeListEvents { action, _ -> handleDialogMessageAction(action.item) }
     }
 
     protected open fun handleNavigationAction(action: NavigationAction) {
         action.doAction(navigateTo())
     }
 
-    protected open fun handleToastMessageAction(action: ToastMessageAction) {
+    protected open fun handleToastMessageAction(
+        actionInfo: VmListEvent.ItemInfo<BaseMessageAction<Toast, Context>>,
+        listener: NextActionListener<BaseMessageAction<Toast, Context>>,
+        listenDismissEvents: Boolean
+    ) {
+        val action = actionInfo.item
         action.doAction(requireContext())
-    }
-
-    protected open fun handleSnackMessageAction(action: SnackMessageAction) {
-        getViewForSnack(action)?.let { view ->
-            action.view = view
-            action.doAction(requireContext())
+        if (listenDismissEvents && action.show) {
+            action.lastShowed?.addCallback(object : Toast.Callback() {
+                override fun onToastHidden() {
+                    listener.onNext(listOf(actionInfo))
+                }
+            })
         }
     }
 
+    protected open fun handleSnackMessageAction(
+        actionInfo: VmListEvent.ItemInfo<BaseMessageAction<Snackbar, View>>,
+        listener: NextActionListener<BaseMessageAction<Snackbar, View>>,
+        listenDismissEvents: Boolean
+    ) {
+        val action = actionInfo.item
+        getViewForSnack(action)?.let { view ->
+            action.doAction(view)
+            if (listenDismissEvents && action.show) {
+                action.lastShowed?.addCallback(object : Snackbar.Callback() {
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        // при пропадании этого снека (по кнопке, таймауту etc.) спрашиваем следующую порцию
+                        listener.onNext(listOf(actionInfo))
+                    }
+                })
+            }
+        }
+    }
+
+    @Deprecated("use DialogFragmentShowMessageAction", replaceWith = ReplaceWith("handleTypedDialogShowMessageAction"))
     protected open fun handleDialogMessageAction(action: AlertDialogMessageAction) {
         action.doAction(requireContext())
     }
 
-    protected open fun handleTypedDialogShowMessageAction(action: DialogFragmentShowMessageAction) {
+    protected open fun handleTypedDialogShowMessageAction(
+        actionInfo: VmListEvent.ItemInfo<DialogFragmentShowMessageAction>,
+        listener: NextActionListener<DialogFragmentShowMessageAction>,
+        listenDismissEvents: Boolean
+    ) {
+        val action = actionInfo.item
         action.doAction(dialogFragmentsHolder)
+        if (listenDismissEvents) {
+            dialogFragmentsHolder.dismissLiveEvents(action.tag, TypedDialogFragment::class.java, null).subscribeObservableOnce {
+                // при пропадании этого диалога, спрашиваем следующую порцию
+                listener.onNext(listOf(actionInfo))
+            }
+        }
     }
 
     protected open fun handleTypedDialogHideMessageAction(action: DialogFragmentHideMessageAction) {
         action.doAction(dialogFragmentsHolder)
     }
 
-    protected open fun getViewForSnack(action: SnackMessageAction): View? = view
+    protected open fun getViewForSnack(action: BaseMessageAction<Snackbar, View>): View? = view
 
     /**
      * Подписка на возможные диаложные ивенты с фрагментов на этом экране, пока экран существует
@@ -183,21 +233,50 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     }
 
     @JvmOverloads
-    protected inline fun <T> LiveData<VmEvent<T>>.observeEvents(owner: LifecycleOwner = viewLifecycleOwner, crossinline onNext: (T) -> Unit) {
+    protected inline fun <T> LiveData<VmEvent<T>>.observeEvents(
+        owner: LifecycleOwner = viewLifecycleOwner,
+        crossinline onNext: (T) -> Unit
+    ) {
         this.observe(owner, Observer {
             it.get()?.let(onNext)
         })
     }
 
     @JvmOverloads
-    protected inline fun <T> LiveData<VmListEvent<T>>.observeListEvents(owner: LifecycleOwner = viewLifecycleOwner, crossinline onNext: (T) -> Unit) {
-        this.observe(owner, Observer { event ->
-            event.getAll().let { list ->
-                list.forEach {
-                    onNext(it)
-                }
-            }
+    /**
+     * @param removeEvents true, если при вычитывании [T] сразу требуется удаление из очереди - запоминание происходит в другом месте;
+     * false - если удаление по тегу произойдёт только после обработки текущего(их) выведеденного - после скрытия
+     */
+    protected fun <T : BaseViewModelAction<*>> LiveData<VmListEvent<T>>.observeListEvents(
+        owner: LifecycleOwner = viewLifecycleOwner,
+        removeEvents: Boolean = true,
+        onNext: (VmListEvent.ItemInfo<T>, NextActionListener<T>) -> Unit
+    ) {
+        this.observe(owner, Observer { events ->
+            drainVmListEvents(events, removeEvents, onNext)
         })
+    }
+
+    private fun <T : BaseViewModelAction<*>> drainVmListEvents(
+        listEvent: VmListEvent<T>,
+        removeEvents: Boolean = true,
+        onNext: (VmListEvent.ItemInfo<T>, NextActionListener<T>) -> Unit
+    ) {
+        listEvent.getAllBeforeSingle(removeEvents).let { list ->
+            list.forEach {
+                val listener = object : NextActionListener<T> {
+                    override fun onNext(handledEvents: List<VmListEvent.ItemInfo<T>>) {
+                        if (!removeEvents) {
+                            handledEvents.forEach { event ->
+                                listEvent.removeAllByTag(event.tag)
+                            }
+                        }
+                        drainVmListEvents(listEvent, removeEvents, onNext)
+                    }
+                }
+                onNext(it, listener)
+            }
+        }
     }
 
     @JvmOverloads
@@ -210,6 +289,18 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         subscribe(owner, operator, emitOnce, onNext)
     }
 
+    protected fun <T> LiveObservable<T>.subscribeObservableOnce(
+        owner: LifecycleOwner = viewLifecycleOwner,
+        operator: ObservableOperator<T, T>? = ObservableOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+        emitOnce: Boolean = false,
+        onNext: (T) -> Unit
+    ) {
+        subscribe(owner, operator, emitOnce) {
+            onNext(it)
+            unsubscribe(owner)
+        }
+    }
+
     @JvmOverloads
     protected fun <T> LiveMaybe<T>.subscribeMaybe(
         owner: LifecycleOwner = viewLifecycleOwner,
@@ -218,6 +309,28 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         onNext: (T) -> Unit
     ) {
         subscribe(owner, operator, emitOnce, onNext)
+    }
+
+    @JvmOverloads
+    protected fun <T> LiveMaybe<T>.subscribeMaybeOnce(
+        owner: LifecycleOwner = viewLifecycleOwner,
+        operator: MaybeOperator<T, T>? = MaybeOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+        emitOnce: Boolean = false,
+        onNext: (T) -> Unit
+    ) {
+        subscribe(owner, operator, emitOnce) {
+            onNext(it)
+            unsubscribe(owner)
+        }
+    }
+
+    /**
+     * Клиенский код должен вызввать onNext по готовности вычитать оставшиеся ивенты
+     * из очереди в порядке приоритета
+     */
+    interface NextActionListener<T : BaseViewModelAction<*>> {
+
+        fun onNext(handledEvents: List<VmListEvent.ItemInfo<T>>)
     }
 
     /**
@@ -230,7 +343,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         private val params: State.Params,
         owner: SavedStateRegistryOwner,
         defaultArgs: Bundle?
-    ): AbstractSavedStateViewModelFactory(owner, defaultArgs) {
+    ) : AbstractSavedStateViewModelFactory(owner, defaultArgs) {
 
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel?> create(key: String, modelClass: Class<T>, handle: SavedStateHandle): T {

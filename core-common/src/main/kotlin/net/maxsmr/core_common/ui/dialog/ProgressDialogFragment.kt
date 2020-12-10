@@ -8,7 +8,7 @@ import net.maxsmr.core_common.R
 
 class ProgressDialogFragment : TypedDialogFragment<AlertDialog>() {
 
-    private class ProgressDialogBuilder(context: Context) : Builder<ProgressDialogFragment>(context) {
+    private class ProgressDialogBuilder() : Builder<ProgressDialogFragment>() {
 
         override fun build(): ProgressDialogFragment {
             return instance(
@@ -20,8 +20,8 @@ class ProgressDialogFragment : TypedDialogFragment<AlertDialog>() {
     companion object {
 
         @JvmStatic
-        fun instance(context: Context, isCancelable: Boolean): ProgressDialogFragment =
-                ProgressDialogBuilder(context)
+        fun instance(isCancelable: Boolean): ProgressDialogFragment =
+                ProgressDialogBuilder()
                     .setStyleResId(R.style.ProgressDialogTheme)
                     .setBackgroundResId(R.drawable.bg_dialog_rounded)
                     .setCustomView(R.layout.dialog_progress_rounded)

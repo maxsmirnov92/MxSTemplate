@@ -61,9 +61,9 @@ class TestFragment : BaseFragment<TestViewModel>() {
             targetAction = {
                 dialogFragmentsHolder.show(
                     DIALOG_TAG_PERMISSIONS_GRANTED,
-                    TypedDialogFragment.DefaultTypedDialogBuilder(requireContext())
+                    TypedDialogFragment.DefaultTypedDialogBuilder()
                         .setMessage(getString(R.string.dialog_message_permission_granted_format, perms))
-                        .setButtons(android.R.string.ok, null, null)
+                        .setButtons(requireContext(), android.R.string.ok, null, null)
                         .build()
                 )
             }

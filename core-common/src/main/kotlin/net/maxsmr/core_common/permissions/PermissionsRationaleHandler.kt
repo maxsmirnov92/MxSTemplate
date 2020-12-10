@@ -72,9 +72,9 @@ open class PermissionsRationaleHandler(
         }
         dialogFragmentsHolder.show(
             DIALOG_TAG_RATIONALE,
-            TypedDialogFragment.DefaultTypedDialogBuilder(context)
+            TypedDialogFragment.DefaultTypedDialogBuilder()
                 .setMessage(message)
-                .setButtons(android.R.string.yes, null, android.R.string.no)
+                .setButtons(context, android.R.string.yes, null, android.R.string.no)
                 .build(),
             true
         )

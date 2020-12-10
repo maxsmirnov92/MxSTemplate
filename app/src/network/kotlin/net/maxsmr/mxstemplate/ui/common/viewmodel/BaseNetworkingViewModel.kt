@@ -1,7 +1,6 @@
 package net.maxsmr.mxstemplate.ui.common.viewmodel
 
 import androidx.annotation.CallSuper
-import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.SavedStateHandle
 import io.reactivex.Completable
 import io.reactivex.Maybe
@@ -12,13 +11,13 @@ import io.reactivex.disposables.Disposables
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
 import net.maxsmr.core_common.BaseApplication
+import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.isDisposableActive
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
-import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.core_common.ui.viewmodel.BaseScreenData
+import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.core_network.connection.ConnectionProvider
-import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.networkutils.ConnectivityChecker
 
 /**
@@ -32,7 +31,7 @@ abstract class BaseNetworkingViewModel<SD : BaseScreenData>(
     schedulersProvider: SchedulersProvider,
     stringsProvider: StringsProvider,
     errorHandler: ErrorHandler
-) : BaseViewModel<SD>(savedStateHandle, schedulersProvider, stringsProvider, errorHandler), LifecycleObserver {
+) : BaseViewModel<SD>(savedStateHandle, schedulersProvider, stringsProvider, errorHandler) {
 
     private val networkStatus = ConnectivityChecker(BaseApplication.context)
 
