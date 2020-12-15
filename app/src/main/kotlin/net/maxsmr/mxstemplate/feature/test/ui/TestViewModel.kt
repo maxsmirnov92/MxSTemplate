@@ -11,11 +11,11 @@ import net.maxsmr.commonutils.android.gui.actions.message.SnackBuilderMessageAct
 import net.maxsmr.commonutils.android.gui.actions.message.ToastBuilderMessageAction
 import net.maxsmr.commonutils.android.gui.actions.message.ToastMessageAction
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.android.live.event.VmListEvent
 import net.maxsmr.commonutils.data.text.EMPTY_STRING
 import net.maxsmr.commonutils.logger.BaseLogger
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.logException
-import net.maxsmr.commonutils.rx.live.event.VmListEvent
 import net.maxsmr.core_common.BaseApplication
 import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider

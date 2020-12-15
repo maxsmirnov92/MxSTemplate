@@ -24,17 +24,15 @@ import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageActi
 import net.maxsmr.commonutils.android.gui.actions.message.BaseMessageAction
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.holder.DialogFragmentsHolder
+import net.maxsmr.commonutils.android.live.event.VmEvent
+import net.maxsmr.commonutils.android.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.live.LiveMaybe
 import net.maxsmr.commonutils.rx.live.LiveObservable
 import net.maxsmr.commonutils.rx.live.LiveSubject
-import net.maxsmr.commonutils.rx.live.event.VmEvent
-import net.maxsmr.commonutils.rx.live.event.VmListEvent
 import net.maxsmr.core_common.ui.actions.NavigationAction
-import net.maxsmr.core_common.ui.dialog.CustomViewProgressable
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
-import net.maxsmr.mxstemplate.R
-import net.maxsmr.mxstemplate.di.ui.BaseVmFactory
+import net.maxsmr.core_common.ui.viewmodel.factory.BaseVmFactory
 import pub.devrel.easypermissions.EasyPermissions
 import javax.inject.Inject
 
@@ -62,10 +60,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open var freezeEventsOnPause = true
 
     protected lateinit var viewModel: VM
-
-    private val blockingProgress: CustomViewProgressable by lazy {
-        CustomViewProgressable(requireContext(), R.layout.layout_progress_without_text)
-    }
 
     override fun androidInjector(): AndroidInjector<Any> = androidInjector
 
@@ -166,7 +160,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         listenDismissEvents: Boolean
     ) {
         val action = actionInfo.item
-        getViewForSnack(action)?.let { view ->
+        getViewForSnack(action).let { view ->
             action.doAction(view)
             if (listenDismissEvents && action.show) {
                 action.lastShowed?.addCallback(object : Snackbar.Callback() {
@@ -203,7 +197,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         action.doAction(dialogFragmentsHolder)
     }
 
-    protected open fun getViewForSnack(action: BaseMessageAction<Snackbar, View>): View? = view
+    protected open fun getViewForSnack(action: BaseMessageAction<Snackbar, View>): View = requireView()
 
     /**
      * Подписка на возможные диаложные ивенты с фрагментов на этом экране, пока экран существует
@@ -214,10 +208,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     protected fun <A : BaseViewModelAction<*>> subscribeOnAction(action: LiveSubject<A>, consumer: (A) -> Unit) {
         action.subscribe(viewLifecycleOwner, onNext = consumer)
-    }
-
-    protected fun setBlockingProgressVisible(visible: Boolean) {
-        if (visible) blockingProgress.onStart() else blockingProgress.onStop()
     }
 
     private fun createViewModelFactory(savedInstanceState: Bundle?): WrapperVmFactory<VM>? {
@@ -242,11 +232,11 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         })
     }
 
-    @JvmOverloads
     /**
      * @param removeEvents true, если при вычитывании [T] сразу требуется удаление из очереди - запоминание происходит в другом месте;
      * false - если удаление по тегу произойдёт только после обработки текущего(их) выведеденного - после скрытия
      */
+    @JvmOverloads
     protected fun <T : BaseViewModelAction<*>> LiveData<VmListEvent<T>>.observeListEvents(
         owner: LifecycleOwner = viewLifecycleOwner,
         removeEvents: Boolean = true,

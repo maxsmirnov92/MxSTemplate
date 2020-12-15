@@ -1,6 +1,6 @@
 package net.maxsmr.mxstemplate.utils.validation
 
-import net.maxsmr.commonutils.android.livedata.wrappers.LiveDataCanError
+import net.maxsmr.commonutils.android.live.wrappers.LiveDataCanError
 import net.maxsmr.commonutils.data.*
 import net.maxsmr.commonutils.data.conversion.toIntNotNull
 import net.maxsmr.commonutils.data.entity.EmptyValidable

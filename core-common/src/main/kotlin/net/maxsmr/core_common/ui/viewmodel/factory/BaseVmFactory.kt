@@ -1,4 +1,4 @@
-package net.maxsmr.mxstemplate.di.ui
+package net.maxsmr.core_common.ui.viewmodel.factory
 
 import androidx.lifecycle.SavedStateHandle
 import me.ilich.juggler.states.State

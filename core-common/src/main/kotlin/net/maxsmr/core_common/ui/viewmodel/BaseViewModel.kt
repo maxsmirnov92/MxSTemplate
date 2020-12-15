@@ -1,6 +1,5 @@
 package net.maxsmr.core_common.ui.viewmodel
 
-import android.R
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
@@ -34,10 +33,10 @@ import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentShowMessa
 import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageAction
 import net.maxsmr.commonutils.android.gui.actions.message.BaseMessageAction
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.android.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.BiFunctionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
-import net.maxsmr.commonutils.rx.live.event.VmListEvent
 import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.EMPTY_ACTION
@@ -215,7 +214,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
             showDialogCommands.value = showDialogCommands.newEvent(
                 DialogFragmentShowMessageAction(
                     tag,
-                    ProgressDialogFragment.instance(false),
+                    ProgressDialogFragment.ProgressDialogBuilder().build(),
                     false
                 )
             )
@@ -231,7 +230,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
                 tag,
                 TypedDialogFragment.DefaultTypedDialogBuilder()
                     .setMessage(errorMessage)
-                    .setButtons(stringsProvider.getString(R.string.ok), null, null)
+                    .setButtons(stringsProvider.getString(android.R.string.ok), null, null)
                     .build()
             )
         )

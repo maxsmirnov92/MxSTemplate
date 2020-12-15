@@ -10,7 +10,7 @@ import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.permissions.PermissionsRationaleHandler
 import net.maxsmr.mxstemplate.R
-import net.maxsmr.mxstemplate.di.ui.BaseVmFactory
+import net.maxsmr.core_common.ui.viewmodel.factory.BaseVmFactory
 import net.maxsmr.mxstemplate.ui.common.BaseFragment
 import net.maxsmr.permissionchecker.checkAndRequestPermissionsStorage
 import pub.devrel.easypermissions.AfterPermissionGranted
