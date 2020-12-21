@@ -1,8 +1,9 @@
-package net.maxsmr.core_common.ui.viewmodel
+package net.maxsmr.core_common.ui.viewmodel.delegates
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

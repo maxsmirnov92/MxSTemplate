@@ -45,6 +45,7 @@ import net.maxsmr.core_common.arch.rx.callinfo.*
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.ui.actions.NavigationAction
 import net.maxsmr.core_common.ui.dialog.ProgressDialogFragment
+import net.maxsmr.core_common.ui.viewmodel.delegates.getPersistableKey
 import kotlin.reflect.KProperty
 
 private const val ARG_CURRENT_SCREEN_DATA = "current_screen_data"
@@ -243,11 +244,11 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
         val disposable =
             if (operator != null) {
-                observable.observeOn(schedulersProvider.main())
+                observable.observeOn(schedulersProvider.main)
                     .lift<Any>(operator)
                     .subscribeWith(observer as Observer<Any>) as Disposable
             } else {
-                observable.observeOn(schedulersProvider.main())
+                observable.observeOn(schedulersProvider.main)
                     .subscribeWith(observer) as Disposable
             }
         disposables.add(disposable)
@@ -260,11 +261,11 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observer: DisposableSingleObserver<T>
     ): Disposable {
         val disposable = if (operator != null) {
-            single.observeOn(schedulersProvider.main())
+            single.observeOn(schedulersProvider.main)
                 .lift<Any>(operator)
                 .subscribeWith(observer as DisposableSingleObserver<Any>)
         } else {
-            single.observeOn(schedulersProvider.main())
+            single.observeOn(schedulersProvider.main)
                 .subscribeWith(observer as DisposableSingleObserver<Any>)
         }
         disposables.add(disposable)
@@ -277,11 +278,11 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observer: DisposableCompletableObserver
     ): Disposable {
         val disposable = if (operator != null) {
-            completable.observeOn(schedulersProvider.main())
+            completable.observeOn(schedulersProvider.main)
                 .lift(operator)
                 .subscribeWith(observer)
         } else {
-            completable.observeOn(schedulersProvider.main())
+            completable.observeOn(schedulersProvider.main)
                 .subscribeWith(observer)
         }
         disposables.add(disposable)
@@ -294,11 +295,11 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observer: DisposableMaybeObserver<T>
     ): Disposable {
         val disposable = if (operator != null) {
-            maybe.observeOn(schedulersProvider.main())
+            maybe.observeOn(schedulersProvider.main)
                 .lift<Any>(operator)
                 .subscribeWith(observer as DisposableMaybeObserver<Any>)
         } else {
-            maybe.observeOn(schedulersProvider.main())
+            maybe.observeOn(schedulersProvider.main)
                 .subscribeWith(observer as DisposableMaybeObserver<Any>)
         }
         disposables.add(disposable)
@@ -706,7 +707,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         val lastSubscribedCallInfo =
             ObservableCallInfo(false, observable, onNext, null, onError, true)
         return subscribe(
-            observable.subscribeOn(schedulersProvider.worker()),
+            observable.subscribeOn(schedulersProvider.worker),
             onNext,
             { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
@@ -720,7 +721,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         val lastSubscribedCallInfo =
             ObservableCallInfo(false, observable, onNext, onComplete, onError, true)
         return subscribe(
-            observable.subscribeOn(schedulersProvider.worker()),
+            observable.subscribeOn(schedulersProvider.worker),
             onNext,
             onComplete,
             { e -> handleError(e, onError, lastSubscribedCallInfo) })
@@ -733,7 +734,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
         val lastSubscribedCallInfo = SingleCallInfo(single, onSuccess, onError, true)
         return subscribe(
-            single.subscribeOn(schedulersProvider.worker()),
+            single.subscribeOn(schedulersProvider.worker),
             onSuccess,
             { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
@@ -745,7 +746,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
         val lastSubscribedCallInfo = CompletableCallInfo(completable, onComplete, onError, true)
         return subscribe(
-            completable.subscribeOn(schedulersProvider.worker()),
+            completable.subscribeOn(schedulersProvider.worker),
             onComplete,
             { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
@@ -758,7 +759,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
         val lastSubscribedCallInfo = MaybeCallInfo(maybe, onSuccess, onComplete, onError, true)
         return subscribe(
-            maybe.subscribeOn(schedulersProvider.worker()),
+            maybe.subscribeOn(schedulersProvider.worker),
             onSuccess,
             onComplete,
             { e -> handleError(e, onError, lastSubscribedCallInfo) })
@@ -795,7 +796,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         val lastSubscribedCallInfo =
             ObservableCallInfo(true, observable, onNext, null, onError, true)
         return subscribeTakeLastFrozen(
-            observable.subscribeOn(schedulersProvider.worker()),
+            observable.subscribeOn(schedulersProvider.worker),
             onNext,
             { e -> handleError(e, onError, lastSubscribedCallInfo) })
     }
@@ -809,7 +810,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onError: ConsumerSafe<Throwable>
     ): Disposable {
 //        lastSubscribedCallInfo = ObservableCallInfo(true, observable, onNext, null, onError, false)
-        return subscribe(observable.subscribeOn(schedulersProvider.worker()), onNext, onError)
+        return subscribe(observable.subscribeOn(schedulersProvider.worker), onNext, onError)
     }
 
     protected fun <T> subscribeIo(
@@ -818,7 +819,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onError: ConsumerSafe<Throwable>
     ): Disposable {
 //        lastSubscribedCallInfo = SingleCallInfo(single, onSuccess, onError, false)
-        return subscribe(single.subscribeOn(schedulersProvider.worker()), onSuccess, onError)
+        return subscribe(single.subscribeOn(schedulersProvider.worker), onSuccess, onError)
     }
 
     protected fun subscribeIo(
@@ -827,7 +828,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onError: ConsumerSafe<Throwable>
     ): Disposable {
 //        lastSubscribedCallInfo = CompletableCallInfo(completable, onComplete, onError, false)
-        return subscribe(completable.subscribeOn(schedulersProvider.worker()), onComplete, onError)
+        return subscribe(completable.subscribeOn(schedulersProvider.worker), onComplete, onError)
     }
 
     protected fun <T> subscribeIo(
@@ -838,7 +839,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
 //        lastSubscribedCallInfo = ObservableCallInfo(false, observable, onNext, onComplete, onError, false)
         return subscribe(
-            observable.subscribeOn(schedulersProvider.worker()),
+            observable.subscribeOn(schedulersProvider.worker),
             onNext,
             onComplete,
             onError
@@ -853,7 +854,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
 //        lastSubscribedCallInfo = MaybeCallInfo(maybe, onSuccess, onComplete, onError, false)
         return subscribe(
-            maybe.subscribeOn(schedulersProvider.worker()),
+            maybe.subscribeOn(schedulersProvider.worker),
             onSuccess,
             onComplete,
             onError
@@ -885,7 +886,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     ): Disposable {
 //        lastSubscribedCallInfo = ObservableCallInfo(true, observable, onNext, null, onError, false)
         return subscribeTakeLastFrozen(
-            observable.subscribeOn(schedulersProvider.worker()),
+            observable.subscribeOn(schedulersProvider.worker),
             onNext,
             onError
         )
@@ -909,7 +910,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observable: Observable<T>,
         onNext: ConsumerSafe<T>
     ): Disposable {
-        return subscribeTakeLastFrozen(observable.subscribeOn(schedulersProvider.worker()), onNext)
+        return subscribeTakeLastFrozen(observable.subscribeOn(schedulersProvider.worker), onNext)
     }
 
     /**
@@ -934,7 +935,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observer: LambdaObserver<T>
     ): Disposable {
         return subscribeTakeLastFrozen(
-            observable.subscribeOn(schedulersProvider.worker()),
+            observable.subscribeOn(schedulersProvider.worker),
             observer
         )
     }

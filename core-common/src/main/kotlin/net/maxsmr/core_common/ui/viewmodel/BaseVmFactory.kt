@@ -1,8 +1,7 @@
-package net.maxsmr.core_common.ui.viewmodel.factory
+package net.maxsmr.core_common.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import me.ilich.juggler.states.State
-import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
+import androidx.lifecycle.ViewModel
 
 /**
  * Базовая фабрика для создания VM от [BaseViewModel].
@@ -13,7 +12,7 @@ import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
  * Если фабрику можно создать без сторонних зависимостей, то @Inject ни в конструкторе, не в филде lateinit var viewModelFactory не нужен
  * (на самом деле будет нужен всегда, см. [BaseViewModel])
  */
-interface BaseVmFactory<out VM: BaseViewModel<*>>  {
+interface BaseVmFactory<out VM: ViewModel>  {
 
     /**
      * Метод создания VM.
@@ -23,5 +22,5 @@ interface BaseVmFactory<out VM: BaseViewModel<*>>  {
      * параметры конструктора конкретной реализации [BaseVmFactory] (внедряемые даггером)
      * = все необходимые для создания [VM] зависимости
      */
-    fun create(handle: SavedStateHandle, params: State.Params): VM
+    fun create(handle: SavedStateHandle, params: Any?): VM
 }

@@ -10,7 +10,9 @@ import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.permissions.PermissionsRationaleHandler
 import net.maxsmr.mxstemplate.R
-import net.maxsmr.core_common.ui.viewmodel.factory.BaseVmFactory
+import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
+import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
+import net.maxsmr.core_common.ui.viewmodel.delegates.vmFactoryParams
 import net.maxsmr.mxstemplate.ui.common.BaseFragment
 import net.maxsmr.permissionchecker.checkAndRequestPermissionsStorage
 import pub.devrel.easypermissions.AfterPermissionGranted
@@ -22,12 +24,12 @@ private const val DIALOG_TAG_PERMISSIONS_GRANTED = "permissions_granted"
 
 class TestFragment : BaseFragment<TestViewModel>() {
 
-    override val viewModelClass: Class<TestViewModel> = TestViewModel::class.java
+    override val vmFactoryParams: VmFactoryParams<TestViewModel> get() = vmFactoryParams(viewModelFactory)
 
     override val layoutId: Int = R.layout.fragment_test
 
     @Inject
-    override lateinit var viewModelFactory: Factory
+    lateinit var viewModelFactory: Factory
 
     private lateinit var permissionsRationaleHandler: PermissionsRationaleHandler
 
@@ -75,7 +77,7 @@ class TestFragment : BaseFragment<TestViewModel>() {
         private val stringsProvider: StringsProvider
     ) : BaseVmFactory<TestViewModel> {
 
-        override fun create(handle: SavedStateHandle, params: State.Params): TestViewModel {
+        override fun create(handle: SavedStateHandle, params: Any?): TestViewModel {
             return TestViewModel(
                 handle,
                 schedulersProvider,

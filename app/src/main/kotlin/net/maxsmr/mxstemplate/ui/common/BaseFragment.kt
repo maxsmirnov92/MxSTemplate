@@ -32,22 +32,17 @@ import net.maxsmr.commonutils.rx.live.LiveSubject
 import net.maxsmr.core_common.ui.actions.NavigationAction
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
-import net.maxsmr.core_common.ui.viewmodel.factory.BaseVmFactory
+import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
+import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
 import pub.devrel.easypermissions.EasyPermissions
 import javax.inject.Inject
 
 abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasAndroidInjector {
 
-    protected abstract val viewModelClass: Class<out VM>
-
-    protected abstract val viewModelFactory: BaseVmFactory<VM>?
-
     /**
-     * Если вам нужна ViewModel уровня Activity (подходящая для передачи данных между
-     * фрагментами, например, при реализации мастера из нескольких фрагментов, работающих
-     * с общими данными, переопределите данную функцию в true
+     * Возвращает все необходимые параметры для получения инстанса [viewModel]
      */
-    protected open val isSharedViewModel: Boolean = false
+    protected abstract val vmFactoryParams: VmFactoryParams<VM>
 
     protected val dialogFragmentsHolder = DialogFragmentsHolder().apply {
         // DialogFragment может быть показан только один в общем случае
@@ -60,6 +55,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open var freezeEventsOnPause = true
 
     protected lateinit var viewModel: VM
+        private set
 
     override fun androidInjector(): AndroidInjector<Any> = androidInjector
 
@@ -106,10 +102,14 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     @CallSuper
     protected open fun createViewModel(savedInstanceState: Bundle?): VM {
-        val owner: ViewModelStoreOwner = if (isSharedViewModel) requireActivity() else this
-        return createViewModelFactory(savedInstanceState)?.let {
-            ViewModelProvider(owner, it)[viewModelClass]
-        } ?: ViewModelProvider(owner)[viewModelClass]
+        val params = vmFactoryParams
+        val owner = if (params.isShared) requireActivity() else this
+        val factory = params.factory?.let {
+            WrapperVmFactory(it, getParamsOrThrow(), owner, savedInstanceState)
+        }
+        return factory?.let {
+            ViewModelProvider(owner, it)[params.clazz]
+        } ?: ViewModelProvider(owner)[params.clazz]
     }
 
     protected open fun beforeRestoreFromBundle(savedInstanceState: Bundle?) {
@@ -208,13 +208,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     protected fun <A : BaseViewModelAction<*>> subscribeOnAction(action: LiveSubject<A>, consumer: (A) -> Unit) {
         action.subscribe(viewLifecycleOwner, onNext = consumer)
-    }
-
-    private fun createViewModelFactory(savedInstanceState: Bundle?): WrapperVmFactory<VM>? {
-        val owner: LifecycleOwner = if (isSharedViewModel) requireActivity() else this
-        return viewModelFactory?.let {
-            WrapperVmFactory(it, getParamsOrThrow(), owner as SavedStateRegistryOwner, savedInstanceState)
-        }
     }
 
     @JvmOverloads
