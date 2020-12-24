@@ -4,11 +4,9 @@ import android.Manifest
 import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.SavedStateHandle
-import me.ilich.juggler.states.State
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
-import net.maxsmr.core_common.permissions.PermissionsRationaleHandler
 import net.maxsmr.mxstemplate.R
 import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
 import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
@@ -31,14 +29,11 @@ class TestFragment : BaseFragment<TestViewModel>() {
     @Inject
     lateinit var viewModelFactory: Factory
 
-    private lateinit var permissionsRationaleHandler: PermissionsRationaleHandler
-
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,
         viewModel: TestViewModel
     ) {
-        permissionsRationaleHandler = PermissionsRationaleHandler(dialogFragmentsHolder, viewLifecycleOwner)
         onRequestStoragePermissions()
     }
 
@@ -52,14 +47,7 @@ class TestFragment : BaseFragment<TestViewModel>() {
             getString(R.string.dialog_message_permission_request_rationale),
             STORAGE_PERMISSIONS_REQUEST_CODE,
             perms,
-            rationaleAction = {
-                permissionsRationaleHandler.displayRationalePermissionDialog(
-                    it.callObj,
-                    it.rationale,
-                    it.perms,
-                    true
-                )
-            },
+            rationaleHandler = permissionsRationaleHandler,
             targetAction = {
                 dialogFragmentsHolder.show(
                     DIALOG_TAG_PERMISSIONS_GRANTED,

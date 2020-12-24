@@ -29,11 +29,13 @@ import net.maxsmr.commonutils.android.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.live.LiveMaybe
 import net.maxsmr.commonutils.rx.live.LiveObservable
 import net.maxsmr.commonutils.rx.live.LiveSubject
+import net.maxsmr.core_common.permissions.DialogHolderPermissionsRationaleHandler
 import net.maxsmr.core_common.ui.actions.NavigationAction
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
-import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
 import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
 import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
+import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
+import net.maxsmr.permissionchecker.BasePermissionsRationaleHandler
 import pub.devrel.easypermissions.EasyPermissions
 import javax.inject.Inject
 
@@ -52,6 +54,8 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
 
+    protected open lateinit var permissionsRationaleHandler: BasePermissionsRationaleHandler
+
     protected open var freezeEventsOnPause = true
 
     protected lateinit var viewModel: VM
@@ -69,9 +73,11 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         }
     }
 
+    @CallSuper
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         dialogFragmentsHolder.init(viewLifecycleOwner, childFragmentManager)
+        initPermissionsRationaleHandler()
         subscribeOnActions(viewModel)
         onViewCreated(view, savedInstanceState, viewModel)
     }
@@ -114,6 +120,10 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     protected open fun beforeRestoreFromBundle(savedInstanceState: Bundle?) {
         // override if needed
+    }
+
+    protected open fun initPermissionsRationaleHandler() {
+        permissionsRationaleHandler = DialogHolderPermissionsRationaleHandler(dialogFragmentsHolder, viewLifecycleOwner)
     }
 
     @CallSuper

@@ -4,10 +4,10 @@ import android.Manifest
 import android.annotation.TargetApi
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.lifecycle.LifecycleOwner
-import net.maxsmr.commonutils.android.asActivityOrThrow
 import net.maxsmr.commonutils.android.asContextOrThrow
 import net.maxsmr.commonutils.android.getAppSettingsIntent
 import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
@@ -16,21 +16,17 @@ import net.maxsmr.commonutils.logger.BaseLogger
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.formatException
 import net.maxsmr.core_common.R
-import net.maxsmr.permissionchecker.filterRationalePermissions
+import net.maxsmr.permissionchecker.BasePermissionsRationaleHandler
 import java.util.*
 
 private const val DIALOG_TAG_RATIONALE = "rationale"
 
-open class PermissionsRationaleHandler(
+open class DialogHolderPermissionsRationaleHandler(
     private val dialogFragmentsHolder: DialogFragmentsHolder,
-    private val viewLifecycleOwner: LifecycleOwner
-) {
+    viewLifecycleOwner: LifecycleOwner
+): BasePermissionsRationaleHandler() {
 
-    private val logger = BaseLoggerHolder.getInstance().getLogger<BaseLogger>(PermissionsRationaleHandler::class.java)
-
-    protected var lastCallObj: Any? = null
-    protected var lastFinishOnReject: Boolean = false
-    protected var lastNegativeAction: (() -> Unit)? = null
+    private val logger = BaseLoggerHolder.getInstance().getLogger<BaseLogger>(DialogHolderPermissionsRationaleHandler::class.java)
 
     init {
         dialogFragmentsHolder.buttonClickLiveEvents(
@@ -51,24 +47,21 @@ open class PermissionsRationaleHandler(
     }
 
     @TargetApi(Build.VERSION_CODES.O)
-    fun displayRationalePermissionDialog(
+    override fun displayRationalePermissionDialog(
         callObj: Any,
         rationale: String,
         perms: List<String>,
-        finishOnReject: Boolean = false,
-        negativeAction: (() -> Unit)? = null,
+        finishOnReject: Boolean,
+        negativeAction: (() -> Unit)?,
     ) {
-        lastCallObj = callObj
-        lastFinishOnReject = finishOnReject
-        lastNegativeAction = negativeAction
+        super.displayRationalePermissionDialog(callObj, rationale, perms, finishOnReject, negativeAction)
 
         val context = callObj.asContextOrThrow()
 
-        val rationalePermissions = filterRationalePermissions(context, perms.toList())
-        val message = if (rationalePermissions.isEmpty()) {
+        val message = if (perms.isEmpty()) {
             rationale
         } else {
-            formatPermissionsRationale(context, rationalePermissions)
+            formatPermissionsRationale(context, perms)
         }
         dialogFragmentsHolder.show(
             DIALOG_TAG_RATIONALE,
@@ -80,23 +73,7 @@ open class PermissionsRationaleHandler(
         )
     }
 
-    protected open fun onRationalePositiveClick() {
-        val context = viewLifecycleOwner.asContextOrThrow()
-        context.startActivity(getAppSettingsIntent(context))
-    }
-
-    protected open fun onRationaleNegativeClick() {
-        lastCallObj?.let {
-            lastNegativeAction?.invoke()
-            if (lastFinishOnReject) {
-                finish(it)
-            }
-        }
-    }
-
-    protected open fun finish(callObj: Any) {
-        callObj.asActivityOrThrow().finish()
-    }
+    override fun createAppSettingsIntent(context: Context): Intent = getAppSettingsIntent(context)
 
     private fun formatPermissionsRationale(context: Context, perms: List<String>): String {
         val sb = StringBuilder()
