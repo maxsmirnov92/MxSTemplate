@@ -60,6 +60,8 @@ fun normalizePhoneNumber(
         }
         if (replaceSubstring.isNotEmpty()) {
             normalized = normalized.replaceFirst(replaceSubstring, prefixReplaceWith)
+        } else if (!normalized.startsWith(prefixReplaceWith)) {
+            normalized = "$prefixReplaceWith$normalized"
         }
     }
     if (normalized == prefixReplaceWith) {

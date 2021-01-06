@@ -11,8 +11,8 @@ buildscript {
 
         gradlePluginVersion = '4.0.1'
         buildToolsVersion = '29.0.2'
-        kotlinGradlePluginVersion = '1.4.20'
-        kotlinVersion = '1.4.20'
+        kotlinVersion = '1.4.21'
+        kotlinGradlePluginVersion = kotlinVersion
 
         // Support
         androidxFragmentVersion = '1.2.5'
