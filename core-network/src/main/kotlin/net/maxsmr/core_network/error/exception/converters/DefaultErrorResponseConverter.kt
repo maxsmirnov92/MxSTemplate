@@ -1,7 +1,7 @@
 package net.maxsmr.core_network.error.exception.converters
 
 import com.google.gson.Gson
-import net.maxsmr.commonutils.data.gson.fromJsonObjectString
+import net.maxsmr.commonutils.fromJsonObjectString
 import net.maxsmr.core_network.model.response.ResponseObj
 
 class DefaultErrorResponseConverter : BaseErrorResponseConverter<ResponseObj<*>> {

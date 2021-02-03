@@ -1,6 +1,6 @@
 package net.maxsmr.core_network.interceptor
 
-import net.maxsmr.commonutils.data.gson.isJsonFieldJson
+import net.maxsmr.commonutils.model.isJsonFieldJson
 import net.maxsmr.core_network.gson.converter.factory.FIELD_API_ORIGINAL_BODY
 import net.maxsmr.core_network.model.request.api.IApiMapper
 import net.maxsmr.core_network.utils.requestBodyToString

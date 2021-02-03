@@ -2,6 +2,7 @@ package net.maxsmr.core_common.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import me.ilich.juggler.states.State
 
 /**
  * Базовая фабрика для создания VM от [BaseViewModel].
@@ -22,5 +23,5 @@ interface BaseVmFactory<out VM: ViewModel>  {
      * параметры конструктора конкретной реализации [BaseVmFactory] (внедряемые даггером)
      * = все необходимые для создания [VM] зависимости
      */
-    fun create(handle: SavedStateHandle, params: Any?): VM
+    fun create(handle: SavedStateHandle, params: State.Params?): VM
 }

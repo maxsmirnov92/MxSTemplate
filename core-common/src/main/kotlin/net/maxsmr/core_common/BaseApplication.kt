@@ -2,15 +2,17 @@ package net.maxsmr.core_common
 
 import android.app.Activity
 import android.app.Application
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.CallSuper
 import androidx.multidex.MultiDexApplication
 import io.reactivex.plugins.RxJavaPlugins
-import net.maxsmr.commonutils.android.activity.ActiveActivityHolder
+import net.maxsmr.commonutils.activity.ActiveActivityHolder
 import net.maxsmr.commonutils.logger.BaseLogger
 import net.maxsmr.commonutils.logger.LogcatLogger
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
+import java.util.*
 
 const val VERSION_NOT_SET = -1
 const val PLATFORM_NAME = "Android"
@@ -41,6 +43,12 @@ abstract class BaseApplication : MultiDexApplication(), Application.ActivityLife
 
         registerActivityLifecycleCallbacks(this)
         RxJavaPlugins.setErrorHandler { Log.e("Application", "Rx error occurred: $it", it) }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // LocaleManager.instance().loadLanguage().getLocale()
+        LocaleContextWrapper.updateConfigurationLocaleLegacy(this, Locale.getDefault())
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {

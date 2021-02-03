@@ -1,8 +1,8 @@
 package net.maxsmr.mxstemplate.utils
 
 import android.widget.TextView
-import net.maxsmr.commonutils.data.conversion.format.createWatcher
-import net.maxsmr.commonutils.data.conversion.format.setFormattedText
+import net.maxsmr.commonutils.format.createWatcher
+import net.maxsmr.commonutils.format.setFormattedText
 import net.maxsmr.mxstemplate.utils.validation.isDateValid
 import ru.tinkoff.decoro.MaskImpl
 import ru.tinkoff.decoro.parser.UnderscoreDigitSlotsParser

@@ -1,7 +1,7 @@
 package net.maxsmr.core_network
 
 import android.net.Uri
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.text.EMPTY_STRING
 
 interface HostManager {
 

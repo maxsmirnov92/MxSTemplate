@@ -3,7 +3,7 @@ package net.maxsmr.mxstemplate.di.app
 import android.content.Context
 import dagger.Module
 import dagger.Provides
-import net.maxsmr.commonutils.android.getSelfVersionName
+import net.maxsmr.commonutils.getSelfVersionName
 import net.maxsmr.mxstemplate.di.PerApplication
 import javax.inject.Named
 

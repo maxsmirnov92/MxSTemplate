@@ -17,15 +17,15 @@ import dagger.android.support.AndroidSupportInjection
 import io.reactivex.MaybeOperator
 import io.reactivex.ObservableOperator
 import me.ilich.juggler.states.State
-import net.maxsmr.commonutils.android.gui.actions.BaseViewModelAction
-import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentHideMessageAction
-import net.maxsmr.commonutils.android.gui.actions.dialog.DialogFragmentShowMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.AlertDialogMessageAction
-import net.maxsmr.commonutils.android.gui.actions.message.BaseMessageAction
-import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
-import net.maxsmr.commonutils.android.gui.fragments.dialogs.holder.DialogFragmentsHolder
-import net.maxsmr.commonutils.android.live.event.VmEvent
-import net.maxsmr.commonutils.android.live.event.VmListEvent
+import net.maxsmr.commonutils.gui.actions.BaseViewModelAction
+import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentHideMessageAction
+import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentShowMessageAction
+import net.maxsmr.commonutils.gui.actions.message.AlertDialogMessageAction
+import net.maxsmr.commonutils.gui.actions.message.BaseMessageAction
+import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.gui.fragments.dialogs.holder.DialogFragmentsHolder
+import net.maxsmr.commonutils.live.event.VmEvent
+import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.live.LiveMaybe
 import net.maxsmr.commonutils.rx.live.LiveObservable
 import net.maxsmr.commonutils.rx.live.LiveSubject
@@ -36,6 +36,7 @@ import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
 import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
 import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
 import net.maxsmr.permissionchecker.BasePermissionsRationaleHandler
+import net.maxsmr.permissionchecker.PermissionHandle
 import pub.devrel.easypermissions.EasyPermissions
 import javax.inject.Inject
 
@@ -54,6 +55,18 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
 
+    /**
+     * Отображатель пользовательских rationale-диалогов для api 28
+     */
+    lateinit var rationaleHandler: BasePermissionsRationaleHandler
+    /**
+     * При первом запросе разрешений из PermissionsWrapper запоминаем ссылку на [PermissionHandle],
+     * чтобы в дальнейшем отчитаться о результате из onRequestPermissionsResult;
+     * в таком случае аннотацию [AfterPermissionGranted] на свой метод ставить не надо,
+     * а в другом случае (без EasyPermissions.onRequestPermissionsResult, который там вызывается) оно просто не сработает
+     */
+    var permissionHandle: PermissionHandle? = null
+
     protected open lateinit var permissionsRationaleHandler: BasePermissionsRationaleHandler
 
     protected open var freezeEventsOnPause = true
@@ -63,8 +76,12 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     override fun androidInjector(): AndroidInjector<Any> = androidInjector
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onAttach(context: Context) {
         AndroidSupportInjection.inject(this)
+        super.onAttach(context)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
         with(savedInstanceState) {
             super.onCreate(this)
             viewModel = createViewModel(this)
@@ -77,6 +94,8 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         dialogFragmentsHolder.init(viewLifecycleOwner, childFragmentManager)
+        // FIXME сделать DialogHolder реализацию
+//        rationaleHandler =
         initPermissionsRationaleHandler()
         subscribeOnActions(viewModel)
         onViewCreated(view, savedInstanceState, viewModel)
@@ -101,6 +120,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionHandle?.onRequestPermissionsResult(requestCode, permissions, grantResults) ?:
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
@@ -333,7 +353,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
      */
     private class WrapperVmFactory<VM : BaseViewModel<*>>(
         private val factory: BaseVmFactory<VM>,
-        private val params: State.Params,
+        private val params: State.Params?,
         owner: SavedStateRegistryOwner,
         defaultArgs: Bundle?
     ) : AbstractSavedStateViewModelFactory(owner, defaultArgs) {

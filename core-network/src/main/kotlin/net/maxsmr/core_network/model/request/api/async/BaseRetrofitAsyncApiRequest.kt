@@ -1,8 +1,8 @@
 package net.maxsmr.core_network.model.request.api.async
 
 import com.google.gson.JsonObject
-import net.maxsmr.commonutils.data.gson.exclusion.FieldExclude
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.gson.exclusion.FieldExclude
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import org.json.JSONException
 import org.json.JSONObject
 import net.maxsmr.core_network.model.request.api.BaseRetrofitModelApiRequest

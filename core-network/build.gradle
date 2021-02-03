@@ -49,7 +49,7 @@ android {
         javaMaxHeapSize "4G"
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = jvmVersion
         freeCompilerArgs = ["$jvmDefaultArg"]
     }
 }
@@ -59,10 +59,9 @@ dependencies {
 
     api project(':core-common')
 
-    api project(path: ':commonutils')
-    api project(path: ':tasksutils')
     api project(path: ':networkutils')
-//    api "net.maxsmr:networkutils:$networkUtilsVersion"
+//    api (name:'networkutils-release-signed', ext:'aar')
+//    api "net.maxsmr:networkutils:networkUtilsVersion"
 
     // OkHttp
     api "com.squareup.okhttp3:okhttp:$okHttpVersion"
@@ -81,5 +80,4 @@ dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-
 }

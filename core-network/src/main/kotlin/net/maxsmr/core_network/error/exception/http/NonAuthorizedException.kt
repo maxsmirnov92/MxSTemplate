@@ -1,6 +1,6 @@
 package net.maxsmr.core_network.error.exception.http
 
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.exception.NetworkException
 

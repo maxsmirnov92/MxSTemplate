@@ -2,7 +2,7 @@ package net.maxsmr.core_network.error.exception.http
 
 import android.text.TextUtils
 import com.google.gson.Gson
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import retrofit2.HttpException
 import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.NO_ERROR

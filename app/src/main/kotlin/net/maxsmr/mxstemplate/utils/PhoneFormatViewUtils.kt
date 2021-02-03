@@ -4,8 +4,8 @@ import android.telephony.PhoneNumberUtils
 import android.text.Editable
 import android.widget.EditText
 import android.widget.TextView
-import net.maxsmr.commonutils.data.conversion.format.*
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.format.*
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.mxstemplate.utils.validation.isPhoneNumberRusValid
 import ru.tinkoff.decoro.MaskImpl
 import ru.tinkoff.decoro.slots.PredefinedSlots
@@ -75,7 +75,7 @@ fun normalizePhoneNumber(
  * удаляя (), + и 8 превращая в 7
  */
 fun normalizePhoneNumberRemovePlus(phoneNumber: CharSequence): String =
-        normalizePhoneNumber(phoneNumber).trim('+')
+    normalizePhoneNumber(phoneNumber).trim('+')
 
 /**
  * @return ожидаемая длина телефона в зав-ти от его префикса
@@ -89,9 +89,9 @@ fun getPhoneNumberLengthByPrefix(phoneNumber: CharSequence): Int =
 
 @JvmOverloads
 fun formatPhoneNumber(
-        phoneNumber: String,
-        withMask: Boolean = false,
-        rangeToMask: IntRange = IntRange(8, 10)
+    phoneNumber: String,
+    withMask: Boolean = false,
+    rangeToMask: IntRange = IntRange(8, 10)
 ): String {
     var phoneFormatted = normalizePhoneNumber(phoneNumber)
 
@@ -116,9 +116,9 @@ fun formatPhoneNumber(
  */
 @JvmOverloads
 fun EditText.formatPhone(
-        current: Editable?,
-        watcher: MaskFormatWatcher,
-        mask: MaskImpl = createDefaultPhoneMask()
+    current: Editable?,
+    watcher: MaskFormatWatcher,
+    mask: MaskImpl = createDefaultPhoneMask()
 ) {
     // watcher переиспользуется
     current?.let {
@@ -155,7 +155,14 @@ fun TextView.setPhoneFormattedText(
     installOnAndFill: Boolean = false,
     applyWatcher: Boolean = true,
     isDistinct: Boolean = true
-) = setFormattedText(text, createDefaultPhoneMask(isTerminated, hideHardcodedHead, isDigit), prefix, installOnAndFill, applyWatcher, isDistinct) {
+) = setFormattedText(
+    text,
+    createDefaultPhoneMask(isTerminated, hideHardcodedHead, isDigit),
+    prefix,
+    installOnAndFill,
+    applyWatcher,
+    isDistinct
+) {
     isPhoneNumberRusValid(it)
 }
 
@@ -189,9 +196,10 @@ fun TextView.installDefaultPhoneWatcher(
     hideHardcodedHead: Boolean = false,
     isDigit: Boolean = true,
     maskConfigurator: ((MaskImpl) -> Unit)? = null
-) {
-    createDefaultPhoneWatcher(isTerminated, hideHardcodedHead, isDigit, maskConfigurator).installOn(this)
-    if (!hideHardcodedHead) {
-        text = PHONE_RUS_PREFIX_PLUS_SEVEN
+): MaskFormatWatcher =
+    createDefaultPhoneWatcher(isTerminated, hideHardcodedHead, isDigit, maskConfigurator).apply {
+        installOn(this@installDefaultPhoneWatcher)
+        if (!hideHardcodedHead) {
+            text = "$PHONE_RUS_PREFIX_PLUS_SEVEN ("
+        }
     }
-}

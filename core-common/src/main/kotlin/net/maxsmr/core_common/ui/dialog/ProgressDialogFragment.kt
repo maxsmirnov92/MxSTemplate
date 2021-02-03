@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.view.*
 import androidx.annotation.IdRes
 import androidx.appcompat.app.AlertDialog
-import net.maxsmr.commonutils.android.gui.fragments.dialogs.*
+import net.maxsmr.commonutils.gui.fragments.dialogs.*
 import net.maxsmr.core_common.R
 
 const val ARG_IS_ALERT = "AlertDialogFragment#ARG_IS_ALERT"

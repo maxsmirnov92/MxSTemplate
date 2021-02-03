@@ -2,7 +2,7 @@ package net.maxsmr.core_network.error.handler.error.http
 
 import android.net.Uri
 import android.util.Log
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_network.error.exception.http.HttpProtocolException
 import net.maxsmr.core_network.model.request.api.IApiMapper
 import net.maxsmr.core_network.model.request.log.service.RequestLoggerHolder

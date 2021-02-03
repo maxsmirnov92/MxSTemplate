@@ -3,7 +3,7 @@ package net.maxsmr.core_common.ui.actions
 import me.ilich.juggler.Navigable
 import me.ilich.juggler.change.Add
 import me.ilich.juggler.change.Remove
-import net.maxsmr.commonutils.android.gui.actions.BaseViewModelAction
+import net.maxsmr.commonutils.gui.actions.BaseViewModelAction
 
 data class NavigationAction(
         val remove: Remove.Interface?,

@@ -1,35 +1,72 @@
 package net.maxsmr.mxstemplate.format
 
-import net.maxsmr.commonutils.data.conversion.format.decoro.*
+import net.maxsmr.commonutils.format.decoro.*
+import ru.tinkoff.decoro.slots.PredefinedSlots
+import ru.tinkoff.decoro.slots.Slot
 
-private val DIGITS_STAR = listOf(
+private val DIGITS_STAR = setOf(
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*'
 )
 
-// region: захардкоженные decoro-маски, используемые в аппе
+//### - ### - ### - ##
+@JvmField
+val MASK_SNILS = listOf(
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        hardcodedSpaceSlot(),
+        hardcodedHyphenSlot(),
+        hardcodedSpaceSlot(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        hardcodedSpaceSlot(),
+        hardcodedHyphenSlot(),
+        hardcodedSpaceSlot(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        hardcodedSpaceSlot(),
+        hardcodedHyphenSlot(),
+        hardcodedSpaceSlot(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit()
+)
 
 /**
  * нестрогая маска для телефона: допускает "*" после "7" в исходной строке
  */
 val MASK_NON_STRICT_PHONE_RUS_NUMBER = listOf(
         hardcodedPlusSlot(),
-        any(listOf('7')),
+        setOf('7').toSlot(),
         hardcodedSpaceSlot(),
         hardcodedOpenBracketSlot(),
-        any(DIGITS_STAR),
-        any(DIGITS_STAR),
-        any(DIGITS_STAR),
+        DIGITS_STAR.toSlot(),
+        DIGITS_STAR.toSlot(),
+        DIGITS_STAR.toSlot(),
         hardcodedClosedBracketSlot(),
         hardcodedSpaceSlot(),
-        any(DIGITS_STAR),
-        any(DIGITS_STAR),
-        any(DIGITS_STAR),
+        DIGITS_STAR.toSlot(),
+        DIGITS_STAR.toSlot(),
+        DIGITS_STAR.toSlot(),
         hardcodedSpaceSlot(),
-        any(DIGITS_STAR),
-        any(DIGITS_STAR),
+        DIGITS_STAR.toSlot(),
+        DIGITS_STAR.toSlot(),
         hardcodedSpaceSlot(),
-        any(DIGITS_STAR),
-        any(DIGITS_STAR)
+        DIGITS_STAR.toSlot(),
+        DIGITS_STAR.toSlot()
 )
+
+val MASK_DATE = listOf(
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.hardcodedSlot('.').withTags(Slot.TAG_DECORATION),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.hardcodedSlot('.').withTags(Slot.TAG_DECORATION),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit(),
+        PredefinedSlots.digit())
 
 // endregion

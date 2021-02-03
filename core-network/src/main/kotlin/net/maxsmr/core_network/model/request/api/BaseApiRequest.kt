@@ -2,7 +2,7 @@ package net.maxsmr.core_network.model.request.api
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_network.di.networkComponent
 import net.maxsmr.core_network.model.request.RequestBodyType
 import net.maxsmr.core_network.model.request.log.BaseLogRequestData

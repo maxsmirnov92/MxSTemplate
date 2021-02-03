@@ -8,10 +8,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.lifecycle.LifecycleOwner
-import net.maxsmr.commonutils.android.asContextOrThrow
-import net.maxsmr.commonutils.android.getAppSettingsIntent
-import net.maxsmr.commonutils.android.gui.fragments.dialogs.TypedDialogFragment
-import net.maxsmr.commonutils.android.gui.fragments.dialogs.holder.DialogFragmentsHolder
+import net.maxsmr.commonutils.asContextOrThrow
+import net.maxsmr.commonutils.getAppSettingsIntent
+import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.gui.fragments.dialogs.holder.DialogFragmentsHolder
 import net.maxsmr.commonutils.logger.BaseLogger
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.formatException

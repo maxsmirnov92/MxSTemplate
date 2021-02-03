@@ -1,7 +1,7 @@
 package net.maxsmr.mxstemplate.utils.validation
 
-import net.maxsmr.commonutils.data.conversion.format.parseDate
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.format.parseDate
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.mxstemplate.utils.PHONE_RUS_PREFIX_PLUS_SEVEN
 import net.maxsmr.mxstemplate.utils.normalizePhoneNumber
 import java.text.SimpleDateFormat

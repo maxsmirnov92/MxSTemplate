@@ -9,8 +9,8 @@ import android.os.Build
 import android.os.Build.VERSION_CODES.Q
 import android.provider.MediaStore.Downloads.*
 import androidx.core.content.FileProvider
-import net.maxsmr.commonutils.android.media.*
-import net.maxsmr.commonutils.data.*
+import net.maxsmr.commonutils.media.*
+import net.maxsmr.commonutils.*
 import net.maxsmr.core_network.error.exception.http.HttpProtocolException
 import net.maxsmr.core_network.utils.executeCall
 import net.maxsmr.core_network.utils.isResumeDownloadSupported
@@ -34,6 +34,8 @@ class OkHttpDownloader(
     private val okHttpClient: OkHttpClient,
     private val downloadDir: File
 ) {
+
+    private val contentResolver = context.contentResolver
 
     fun listTitles(): List<String> =
         if (Build.VERSION.SDK_INT >= Q) {
@@ -78,7 +80,7 @@ class OkHttpDownloader(
 
     @TargetApi(Q)
     private fun listTitlesQ(): List<String> = queryUri(
-        context,
+        contentResolver,
         EXTERNAL_CONTENT_URI,
         String::class.java,
         PROJECTION,
@@ -144,7 +146,7 @@ class OkHttpDownloader(
             }
         }
 
-        if (tryDeleteExisting && existingUri != null && isResourceExists(context, existingUri)) {
+        if (tryDeleteExisting && existingUri != null && isResourceExists(contentResolver, existingUri)) {
             // апдейт не вызываем, удаляем то, что есть
             // (даже если файл не сушествует или его хэш неправильный - запись в таблице есть)
             try {
@@ -166,7 +168,7 @@ class OkHttpDownloader(
             // актуализируем инфу по текущей урле
             tryUpdate(existingUri, values)
             uri = existingUri
-            previousSize = getResourceSize(context, existingUri)
+            previousSize = getResourceSize(contentResolver, existingUri)
         }
 
         downloadNotifier?.onUriReady(uri)
@@ -205,7 +207,7 @@ class OkHttpDownloader(
             val resultException = HttpProtocolException.RawBuilder(response, e).build()
             if (deleteUnfinishedFile.shouldDelete(isResumeSupported)) {
                 try {
-                    deleteResourceOrThrow(context, uri)
+                    deleteResourceOrThrow(contentResolver, uri)
                 } catch (e: RuntimeException) {
                     throw RuntimeException("Cannot delete unfinished resource $uri", resultException)
                 }
@@ -240,7 +242,7 @@ class OkHttpDownloader(
         downloadNotifier: IDownloadNotifier? = null
     ): Uri {
 
-        val previousSize = if (resumeDownloadIfPossible) getResourceSize(context, existingUri) else 0
+        val previousSize = if (resumeDownloadIfPossible) getResourceSize(contentResolver, existingUri) else 0
 
         val response = executeCall(okHttpClient) {
             requestConfigurator(it)
@@ -264,7 +266,7 @@ class OkHttpDownloader(
         try {
             responseBodyToOutputStream(
                 response,
-                newFile.toFosOrThrow(),
+                newFile.openOutputStreamOrThrow(),
                 previousSize,
                 downloadNotifier
             )

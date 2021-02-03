@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.Intent.ACTION_LOCALE_CHANGED
 import android.content.IntentFilter
 import android.content.res.AssetManager
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -36,8 +38,10 @@ abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
-        LocalBroadcastManager.getInstance(this).registerReceiver(localeChangedReceiver,
-                IntentFilter(ACTION_LOCALE_CHANGED))
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            localeChangedReceiver,
+            IntentFilter(ACTION_LOCALE_CHANGED)
+        )
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -50,9 +54,17 @@ abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(localeChangedReceiver)
     }
 
-    override fun attachBaseContext(newBase: Context?) {
+    override fun attachBaseContext(newBase: Context) {
 //        val lang = LocaleManager.instance().loadLanguage()
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, Locale.getDefault()))
+    }
+
+    override fun applyOverrideConfiguration(overrideConfiguration: Configuration) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+//            val lang: LocaleManager.Lang = LocaleManager.instance().loadLanguage()
+            overrideConfiguration.setLocale(Locale.getDefault())
+        }
+        super.applyOverrideConfiguration(overrideConfiguration)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {

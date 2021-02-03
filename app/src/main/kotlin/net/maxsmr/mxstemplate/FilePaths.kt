@@ -5,17 +5,27 @@ import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.os.Build
 import android.os.Build.VERSION_CODES.Q
 import android.os.Environment
-import net.maxsmr.commonutils.android.media.isExternalStorageMountedAndWritable
-import net.maxsmr.commonutils.android.media.isExternalStorageMountedReadOnly
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.format.formatDate
+import net.maxsmr.commonutils.media.isExternalStorageMountedAndWritable
+import net.maxsmr.commonutils.media.isExternalStorageMountedReadOnly
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_common.BaseApplication
 import java.io.File
+import java.util.*
+
+const val PHOTO_DIRECTORY = "grandtrain_document_photo"
+
+private const val CAMERA_PHOTO_FILE_NAME_FORMAT = "yyyyMMdd_HHmmss'.jpg'"
+
+private const val CROPPED_PHOTO_FILE_NAME_FORMAT = "ddMMyyyy_HHmmss'.jpg'"
+
 
 object FilePaths {
 
     /**
      * Своя внутренняя директория - не требует [WRITE_EXTERNAL_STORAGE] / [READ_EXTERNAL_STORAGE]
     */
+    @JvmStatic
     fun privateInternalDirPath(dirType: String = EMPTY_STRING): File = if (dirType.isNotEmpty()) {
         File(BaseApplication.context.filesDir, dirType)
     } else {
@@ -25,6 +35,7 @@ object FilePaths {
     /**
      * Не требует [WRITE_EXTERNAL_STORAGE] / [READ_EXTERNAL_STORAGE]
      */
+    @JvmStatic
     fun privateExternalMediaDirPath(isReadOnly: Boolean = false): File? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && canUseExternal(isReadOnly)) {
             val dirs = BaseApplication.context.externalMediaDirs
@@ -38,6 +49,7 @@ object FilePaths {
     /**
      * @param isExternal true - требует [WRITE_EXTERNAL_STORAGE] / [READ_EXTERNAL_STORAGE]
      */
+    @JvmStatic
     fun privateDirPath(
         dirType: String = EMPTY_STRING,
         isExternal: Boolean = true,
@@ -55,6 +67,7 @@ object FilePaths {
      * @param isExternal true - по возможности на внешней карте
      */
     @Suppress("DEPRECATION")
+    @JvmStatic
     fun dirPath(
         dirType: String = EMPTY_STRING,
         ignoreVersion: Boolean = false,
@@ -74,6 +87,30 @@ object FilePaths {
                 privateInternalDirPath(dirType)
             }
         }
+
+    @JvmStatic
+    fun photosDirPath(privateDirectory: Boolean = false): File = File(if (privateDirectory) {
+        privateDirPath(Environment.DIRECTORY_PICTURES)
+    } else {
+        dirPath(Environment.DIRECTORY_PICTURES)
+    }, PHOTO_DIRECTORY)
+
+    @JvmStatic
+    fun newCameraPhotoFile(
+        privateDirectory: Boolean = false
+    ): File = File(
+        photosDirPath(privateDirectory).absolutePath,
+        formatDate(
+            Date(),
+            CAMERA_PHOTO_FILE_NAME_FORMAT
+        )
+    )
+
+    @JvmStatic
+    fun newCroppedPictureFile(prefix: String): File {
+        val fileName = prefix + formatDate(Date(), CROPPED_PHOTO_FILE_NAME_FORMAT)
+        return File(BaseApplication.context.cacheDir, fileName)
+    }
 
     private fun canUseExternal(isReadOnly: Boolean): Boolean =
         isExternalStorageMountedAndWritable() || isReadOnly && isExternalStorageMountedReadOnly()

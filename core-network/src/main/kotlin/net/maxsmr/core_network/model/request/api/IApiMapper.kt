@@ -1,6 +1,6 @@
 package net.maxsmr.core_network.model.request.api
 
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_network.gson.converter.factory.FIELD_API_REQUEST_HASH
 import net.maxsmr.core_network.utils.requestBodyToString
 import okhttp3.Request

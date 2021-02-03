@@ -1,8 +1,8 @@
 package net.maxsmr.core_network.utils
 
 import android.text.TextUtils
-import net.maxsmr.commonutils.data.*
-import net.maxsmr.commonutils.data.text.EMPTY_STRING
+import net.maxsmr.commonutils.*
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.throwRuntimeException
 import okhttp3.*
 import okio.Buffer

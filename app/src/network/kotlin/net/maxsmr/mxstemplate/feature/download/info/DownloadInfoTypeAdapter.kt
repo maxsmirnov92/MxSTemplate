@@ -1,11 +1,11 @@
 package net.maxsmr.mxstemplate.feature.download.info
 
 import com.google.gson.*
-import net.maxsmr.commonutils.data.gson.fromJsonObjectString
-import net.maxsmr.commonutils.data.gson.getJsonElementAs
-import net.maxsmr.commonutils.data.gson.getJsonPrimitive
-import net.maxsmr.commonutils.data.gson.toJsonString
-import net.maxsmr.commonutils.data.states.Status
+import net.maxsmr.commonutils.fromJsonObjectString
+import net.maxsmr.commonutils.getJsonElementAs
+import net.maxsmr.commonutils.getJsonPrimitive
+import net.maxsmr.commonutils.states.Status
+import net.maxsmr.commonutils.toJsonString
 import java.lang.reflect.Type
 
 private const val KEY_DOWNLOAD_INFO = "downloadInfo"
