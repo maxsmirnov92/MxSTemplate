@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.SavedStateHandle
 import me.ilich.juggler.states.State
+import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
 import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
@@ -57,9 +58,9 @@ class TestFragment : BaseFragment<TestViewModel>() {
                 dialogFragmentsHolder.show(
                     DIALOG_TAG_PERMISSIONS_GRANTED,
                     TypedDialogFragment.DefaultTypedDialogBuilder()
-                        .setMessage(getString(R.string.dialog_message_permission_granted_format, perms))
-                        .setButtons(requireContext(), android.R.string.ok, null, null)
-                        .build()
+                        .setMessage(TextMessage(R.string.dialog_message_permission_granted_format, perms))
+                        .setButtons(TextMessage(android.R.string.ok),)
+                        .build(requireContext())
                 )
             }
         )

@@ -100,8 +100,8 @@ class ProgressDialogFragment : BaseProgressDialogFragment<Dialog>() {
             customViewResId = R.layout.dialog_progress_rounded
         }
 
-        override fun createArgs(): Bundle {
-            return super.createArgs().apply {
+        override fun createArgs(context: Context): Bundle {
+            return super.createArgs(context).apply {
                 putBoolean(ARG_IS_ALERT, isAlert)
                 if (containerId != 0) {
                     putInt(ARG_CONTAINER_ID, containerId)
@@ -109,8 +109,8 @@ class ProgressDialogFragment : BaseProgressDialogFragment<Dialog>() {
             }
         }
 
-        override fun build(): ProgressDialogFragment {
-            return instance(createArgs())
+        override fun build(context: Context): ProgressDialogFragment {
+            return instance(createArgs(context))
         }
     }
 

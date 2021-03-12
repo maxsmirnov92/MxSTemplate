@@ -6,13 +6,13 @@ import androidx.lifecycle.SavedStateHandle
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.Disposables
 import io.reactivex.internal.operators.observable.ObservableInterval
-import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentShowMessageAction
+import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.message.SnackBuilderMessageAction
 import net.maxsmr.commonutils.gui.actions.message.ToastBuilderMessageAction
 import net.maxsmr.commonutils.gui.actions.message.ToastMessageAction
+import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
 import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.commonutils.live.event.VmListEvent
-import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.commonutils.logger.BaseLogger
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.logException
@@ -50,7 +50,7 @@ class TestViewModel constructor(
     override fun onInitialized() {
         super.onInitialized()
         // тост, собранный через билдер с наиболее частыми филдами
-        toastMessageCommands.setNewEvent(ToastBuilderMessageAction(ToastBuilderMessageAction.Builder(message = "TEST 1")))
+        toastMessageCommands.setNewEvent(ToastBuilderMessageAction(ToastBuilderMessageAction.Builder(message = TextMessage("TEST 1"))))
         // тост, сделанный обычным способом
         toastMessageCommands.setNewEvent(ToastMessageAction(Toast.makeText(BaseApplication.context, "TEST 2", Toast.LENGTH_SHORT)))
         startTimer()
@@ -66,8 +66,8 @@ class TestViewModel constructor(
                 if (counter % 2 == 0) {
                     action = SnackBuilderMessageAction(
                         SnackBuilderMessageAction.Builder(
-                            message = "Indefinite Snackbar with button",
-                            action = "Dismiss",
+                            message = TextMessage("Indefinite Snackbar with button"),
+                            action = TextMessage("Dismiss"),
                             duration = Snackbar.LENGTH_INDEFINITE
                         )
                     )
@@ -79,7 +79,7 @@ class TestViewModel constructor(
                 } else {
                     action = SnackBuilderMessageAction(
                         SnackBuilderMessageAction.Builder(
-                            message = "Short Snackbar without button"
+                            message = TextMessage("Short Snackbar without button")
                         ),
                     )
                     options = VmListEvent.AddOptions(
@@ -92,12 +92,11 @@ class TestViewModel constructor(
                     // НО: в самом DialogFragment возможен показ только одного диалога в данный момент, поэтому checkSingle=true
                     val dialogTag = "${DIALOG_TAG_TEST}_$it"
                     showDialogCommands.setNewEvent(
-                        DialogFragmentShowMessageAction(
+                        DialogBuilderFragmentShowMessageAction(
                             dialogTag,
                             TypedDialogFragment.DefaultTypedDialogBuilder()
-                                .setMessage("Very test message ($it)")
-                                .setButtons("OK", EMPTY_STRING, EMPTY_STRING)
-                                .build(),
+                                .setMessage(TextMessage("Very test message ($it)"))
+                                .setButtons(TextMessage("OK")),
                             false
                         ),
                         VmListEvent.AddOptions(dialogTag)
@@ -109,11 +108,10 @@ class TestViewModel constructor(
             }, {
                 logException(logger, it)
                 showDialogCommands.setNewEvent(
-                    DialogFragmentShowMessageAction(
+                    DialogBuilderFragmentShowMessageAction(
                         DIALOG_TAG_ERROR,
                         TypedDialogFragment.DefaultTypedDialogBuilder()
-                            .setMessage("Something went wrong: $it")
-                            .build()
+                            .setMessage(TextMessage("Something went wrong: $it"))
                     )
                 )
             })

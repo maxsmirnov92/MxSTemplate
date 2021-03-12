@@ -18,8 +18,8 @@ import io.reactivex.MaybeOperator
 import io.reactivex.ObservableOperator
 import me.ilich.juggler.states.State
 import net.maxsmr.commonutils.gui.actions.BaseViewModelAction
+import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentHideMessageAction
-import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.message.AlertDialogMessageAction
 import net.maxsmr.commonutils.gui.actions.message.BaseMessageAction
 import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
@@ -203,14 +203,14 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         }
     }
 
-    @Deprecated("use DialogFragmentShowMessageAction", replaceWith = ReplaceWith("handleTypedDialogShowMessageAction"))
+    @Deprecated("use DialogBuilderFragmentShowMessageAction", replaceWith = ReplaceWith("handleTypedDialogShowMessageAction"))
     protected open fun handleDialogMessageAction(action: AlertDialogMessageAction) {
         action.doAction(requireContext())
     }
 
     protected open fun handleTypedDialogShowMessageAction(
-        actionInfo: VmListEvent.ItemInfo<DialogFragmentShowMessageAction>,
-        listener: NextActionListener<DialogFragmentShowMessageAction>,
+        actionInfo: VmListEvent.ItemInfo<DialogBuilderFragmentShowMessageAction<*,*>>,
+        listener: NextActionListener<DialogBuilderFragmentShowMessageAction<*,*>>,
         listenDismissEvents: Boolean
     ) {
         val action = actionInfo.item

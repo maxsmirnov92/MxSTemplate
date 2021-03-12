@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.lifecycle.LifecycleOwner
 import net.maxsmr.commonutils.asContextOrThrow
 import net.maxsmr.commonutils.getAppSettingsIntent
+import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
 import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.commonutils.gui.fragments.dialogs.holder.DialogFragmentsHolder
 import net.maxsmr.commonutils.logger.BaseLogger
@@ -66,9 +67,9 @@ open class DialogHolderPermissionsRationaleHandler(
         dialogFragmentsHolder.show(
             DIALOG_TAG_RATIONALE,
             TypedDialogFragment.DefaultTypedDialogBuilder()
-                .setMessage(message)
-                .setButtons(context, android.R.string.yes, null, android.R.string.no)
-                .build(),
+                .setMessage(TextMessage(message))
+                .setButtons(TextMessage(android.R.string.yes), null, TextMessage(android.R.string.no))
+                .build(context),
             true
         )
     }

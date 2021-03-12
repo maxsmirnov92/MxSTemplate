@@ -8,6 +8,10 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import io.reactivex.disposables.Disposables
+import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
+import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
+import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
 import net.maxsmr.core_common.BaseApplication
@@ -18,7 +22,11 @@ import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.ui.viewmodel.BaseScreenData
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.core_network.connection.ConnectionProvider
+import net.maxsmr.mxstemplate.R
 import net.maxsmr.networkutils.ConnectivityChecker
+import net.maxsmr.networkutils.NetworkHelper
+
+const val DIALOG_TAG_NO_CONNECTION = "no_connection"
 
 /**
  * [BaseViewModel] с логикой сетевых вызовов, обзор статуса сети
@@ -60,11 +68,25 @@ abstract class BaseNetworkingViewModel<SD : BaseScreenData>(
         subscribeOnConnectionChanges()
     }
 
+    fun <T : Any> checkConnectionAndRun(targetAction: () -> T?): T? =
+        if (checkConnection()) targetAction() else null
+
+    fun checkConnection(): Boolean = NetworkHelper.isOnline(BaseApplication.context).also {
+        if (!it) showDialogCommands.setNewEvent(
+            DialogBuilderFragmentShowMessageAction(
+                DIALOG_TAG_NO_CONNECTION,
+                TypedDialogFragment.DefaultTypedDialogBuilder()
+                    .setMessage(TextMessage(R.string.message_no_internet))
+                    .setButtons(TextMessage(android.R.string.ok)),
+                false
+            ),
+            VmListEvent.AddOptions(DIALOG_TAG_NO_CONNECTION)
+        )
+    }
+
     protected open fun handleConnectionChanged(isConnected: Boolean) {
         // override if needed
     }
-
-
 
 
     //region subscribeIoAutoReload

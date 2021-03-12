@@ -1,5 +1,6 @@
 package net.maxsmr.core_common.ui.viewmodel
 
+import android.R
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
@@ -28,10 +29,11 @@ import io.reactivex.subjects.BehaviorSubject
 import me.ilich.juggler.change.Remove
 import net.maxsmr.commonutils.gui.actions.BaseTaggedViewModelAction
 import net.maxsmr.commonutils.gui.actions.BaseViewModelAction
+import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentHideMessageAction
-import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.message.AlertDialogMessageAction
 import net.maxsmr.commonutils.gui.actions.message.BaseMessageAction
+import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
 import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
 import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
@@ -72,11 +74,16 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     val snackMessageCommands: MutableLiveData<VmListEvent<BaseMessageAction<Snackbar, View>>> = MutableLiveData()
 
-    val showDialogCommands: MutableLiveData<VmListEvent<DialogFragmentShowMessageAction>> =
+    val showDialogCommands: MutableLiveData<VmListEvent<DialogBuilderFragmentShowMessageAction<*,*>>> =
         MutableLiveData()
 
     val hideDialogCommands: MutableLiveData<VmListEvent<DialogFragmentHideMessageAction>> =
         MutableLiveData()
+
+    @Deprecated("use showMessageCommands or hideMessageCommands")
+    val alertDialogMessageCommands: MutableLiveData<VmListEvent<AlertDialogMessageAction>> =
+        MutableLiveData()
+
 
     protected val KProperty<*>.persistableKey: String
         get() = this@BaseViewModel.getPersistableKey(this)
@@ -88,10 +95,6 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     private val freezeSelectorsMap = mutableMapOf<String, BehaviorSubject<Boolean>>()
 
     private var currentFreezeSelector: BehaviorSubject<Boolean>? = null
-
-    @Deprecated("use showMessageCommands or hideMessageCommands")
-    val alertDialogMessageCommands: MutableLiveData<VmListEvent<AlertDialogMessageAction>> =
-        MutableLiveData()
 
     private val disposables = CompositeDisposable()
 
@@ -213,9 +216,9 @@ abstract class BaseViewModel<SD : BaseScreenData>(
     protected fun showOrHideProgress(show: Boolean, tag: String) {
         if (show) {
             showDialogCommands.value = showDialogCommands.newEvent(
-                DialogFragmentShowMessageAction(
+                DialogBuilderFragmentShowMessageAction(
                     tag,
-                    ProgressDialogFragment.ProgressDialogBuilder().build(),
+                    ProgressDialogFragment.ProgressDialogBuilder(),
                     false
                 )
             )
@@ -225,14 +228,13 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         }
     }
 
-    protected fun showOkErrorDialog(tag: String, errorMessage: String) {
+    protected fun showOkErrorDialog(tag: String, errorMessage: TextMessage) {
         showDialogCommands.value = showDialogCommands.newEvent(
-            DialogFragmentShowMessageAction(
+            DialogBuilderFragmentShowMessageAction(
                 tag,
                 TypedDialogFragment.DefaultTypedDialogBuilder()
                     .setMessage(errorMessage)
-                    .setButtons(stringsProvider.getString(android.R.string.ok), null, null)
-                    .build()
+                    .setButtons(TextMessage(R.string.ok), null, null)
             )
         )
     }
