@@ -1,6 +1,5 @@
 package net.maxsmr.core_common.ui.viewmodel
 
-import android.R
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
@@ -234,7 +233,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
                 tag,
                 TypedDialogFragment.DefaultTypedDialogBuilder()
                     .setMessage(errorMessage)
-                    .setButtons(TextMessage(R.string.ok), null, null)
+                    .setButtons(TextMessage(android.R.string.ok), null, null)
             )
         )
     }

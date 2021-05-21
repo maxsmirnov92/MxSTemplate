@@ -120,6 +120,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // FIXME: дополнить из https://stackoverflow.com/questions/30719047/android-m-check-runtime-permission-how-to-determine-if-the-user-checked-nev
         permissionHandle?.onRequestPermissionsResult(requestCode, permissions, grantResults) ?:
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
@@ -151,17 +152,17 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         subscribeOnDialogEvents()
         viewModel.navigationCommands.observeListEvents { action, _ -> handleNavigationAction(action.item) }
         viewModel.toastMessageCommands.observeListEvents { action, listener ->
-            handleToastMessageAction(action, listener, false)
+            handleToastMessageAction(action, listener)
             // слушать dismiss-колбеки здесь не надо, т.к. уже очистили свою очередь - показ разруливается системой
         }
         viewModel.snackMessageCommands.observeListEvents(removeEvents = false) { action, listener ->
-            handleSnackMessageAction(action, listener, true)
+            handleSnackMessageAction(action, listener)
         }
-        viewModel.showDialogCommands.observeListEvents(removeEvents = false) { action, listener ->
-            handleTypedDialogShowMessageAction(action, listener, true)
+        viewModel.showDialogCommands.observeListEvents { action, listener ->
+            handleTypedDialogShowMessageAction(action, listener)
         }
         viewModel.hideDialogCommands.observeListEvents { action, _ -> handleTypedDialogHideMessageAction(action.item) }
-        viewModel.alertDialogMessageCommands.observeListEvents { action, _ -> handleDialogMessageAction(action.item) }
+        viewModel.alertDialogMessageCommands.observeListEvents(removeEvents = false) { action, _ -> handleDialogMessageAction(action.item) }
     }
 
     protected open fun handleNavigationAction(action: NavigationAction) {
@@ -171,7 +172,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open fun handleToastMessageAction(
         actionInfo: VmListEvent.ItemInfo<BaseMessageAction<Toast, Context>>,
         listener: NextActionListener<BaseMessageAction<Toast, Context>>,
-        listenDismissEvents: Boolean
+        listenDismissEvents: Boolean = false
     ) {
         val action = actionInfo.item
         action.doAction(requireContext())
@@ -187,7 +188,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open fun handleSnackMessageAction(
         actionInfo: VmListEvent.ItemInfo<BaseMessageAction<Snackbar, View>>,
         listener: NextActionListener<BaseMessageAction<Snackbar, View>>,
-        listenDismissEvents: Boolean
+        listenDismissEvents: Boolean = true
     ) {
         val action = actionInfo.item
         getViewForSnack(action).let { view ->
@@ -211,7 +212,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open fun handleTypedDialogShowMessageAction(
         actionInfo: VmListEvent.ItemInfo<DialogBuilderFragmentShowMessageAction<*,*>>,
         listener: NextActionListener<DialogBuilderFragmentShowMessageAction<*,*>>,
-        listenDismissEvents: Boolean
+        listenDismissEvents: Boolean = true
     ) {
         val action = actionInfo.item
         action.doAction(dialogFragmentsHolder)

@@ -21,7 +21,7 @@ import java.lang.RuntimeException
  * может содержать в себе исходный [HttpException];
  * не бросается в чистом виде, идёт в составе [BaseWrappedHttpException]
  */
-class HttpProtocolException(
+open class HttpProtocolException(
     val url: String = EMPTY_STRING,
     val method: String = EMPTY_STRING,
     val headers: Map<String, String> = mapOf(),
@@ -216,7 +216,7 @@ class HttpProtocolException(
 
     companion object {
 
-        private fun prepareMessage(cause: Throwable?, vararg parts: String): String {
+        fun prepareMessage(cause: Throwable?, vararg parts: String): String {
             val partsList = mutableListOf<String>()
             cause?.localizedMessage?.let {
                 partsList.add(it)

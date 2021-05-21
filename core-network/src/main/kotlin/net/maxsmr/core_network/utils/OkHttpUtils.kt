@@ -4,19 +4,22 @@ import android.text.TextUtils
 import net.maxsmr.commonutils.*
 import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.throwRuntimeException
+import net.maxsmr.core_network.error.exception.CancelledRuntimeException
 import okhttp3.*
 import okio.Buffer
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 
 @Throws(RuntimeException::class)
-fun executeCall(okHttpClient: OkHttpClient, requestConfigurator: (Request.Builder) -> Any?): Response {
-    val request = Request.Builder()
-    requestConfigurator(request)
+@JvmOverloads
+fun executeCall(
+    okHttpClient: OkHttpClient,
+    request: Request.Builder? = null,
+    requestConfigurator: ((Request.Builder) -> Any?)? = null
+): Response {
+    val newRequest = request ?: Request.Builder()
+    requestConfigurator?.invoke(newRequest)
     return try {
-        okHttpClient.newCall(request.build()).execute()
+        okHttpClient.newCall(newRequest.build()).execute()
     } catch (e: Exception) {
         throw RuntimeException("Request execute failed", e)
     }
@@ -77,7 +80,7 @@ fun responseBodyToOutputStream(
     val contentLength = responseBody.contentLength()
     try {
         val inputStream = responseBody.byteStream()
-        copyStream(inputStream, outputStream,
+        inputStream.copyStreamOrThrow(outputStream,
             if (notifier != null) {
                 object : IStreamNotifier {
                     override fun onProcessing(
@@ -102,7 +105,11 @@ fun responseBodyToOutputStream(
                 null
             })
     } catch (e: IOException) {
-        throw RuntimeException("Cannot copy response body to outputStream", e)
+        if (e is InterruptedIOException) {
+            throw CancelledRuntimeException("Copy stream cancelled", e)
+        } else {
+            throw RuntimeException("Copy stream failed", e)
+        }
     }
     return responseBody
 }
