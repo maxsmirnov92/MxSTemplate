@@ -15,13 +15,25 @@ import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
+import net.maxsmr.commonutils.gui.fragments.dialogs.holder.DialogFragmentsHolder
+import net.maxsmr.core_common.BaseApplication
 import net.maxsmr.core_common.LocaleContextWrapper
 import net.maxsmr.jugglerhelper.activities.BaseJugglerActivity
-import pub.devrel.easypermissions.EasyPermissions
+import net.maxsmr.mxstemplate.R
+import net.maxsmr.mxstemplate.ui.common.permissions.DialogHolderDeniedPermissionsHandler
+import net.maxsmr.permissionchecker.BaseDeniedPermissionsHandler
+import net.maxsmr.permissionchecker.PermissionsHelper
 import java.util.*
 import javax.inject.Inject
 
 abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
+
+    val dialogFragmentsHolder = DialogFragmentsHolder().apply {
+        // DialogFragment может быть показан только один в общем случае
+        showRule = DialogFragmentsHolder.ShowRule.SINGLE
+    }
+
+    protected open val permissionsHelper = PermissionsHelper(BaseApplication.context.getSharedPreferences(PREFS_NAME_PERMANENTLY_DENIED, Context.MODE_PRIVATE))
 
     private val localeChangedReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -30,14 +42,28 @@ abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
         }
     }
 
+    /**
+     * При первом запросе разрешений из PermissionsWrapper запоминаем [PermissionsHelper.ResultListener] по данному коду,
+     * чтобы в дальнейшем отчитаться о результате из onRequestPermissionsResult или onActivityResult;
+     */
+    private val permissionResultListeners = mutableMapOf<Int, PermissionsHelper.ResultListener?>()
+
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
+
+    /**
+     * Отображатель пользовательских permanently denied диалогов;
+     * лежит на уровне базовой активити для получения доступа не только из фрагмента, но и из View
+     */
+    protected lateinit var permanentlyDeniedPermissionsHandler: BaseDeniedPermissionsHandler
 
     override fun androidInjector(): AndroidInjector<Any> = androidInjector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
+        dialogFragmentsHolder.init(this, supportFragmentManager)
+        initPermanentlyDeniedPermissionsHandler()
         LocalBroadcastManager.getInstance(this).registerReceiver(
             localeChangedReceiver,
             IntentFilter(ACTION_LOCALE_CHANGED)
@@ -69,14 +95,52 @@ abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+        permissionResultListeners.remove(requestCode)?.onRequestPermissionsResult(permissions, grantResults)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        permissionResultListeners.remove(requestCode)?.onActivityResult()
     }
 
     override fun getAssets(): AssetManager {
-        // RZD-9263 при переопределении конфигурации (например, в LocaleContextWrapper или applyOverrideConfiguration)
+        // при переопределении конфигурации (например, в LocaleContextWrapper или applyOverrideConfiguration)
         // возвращает другой инстанс в Context.getAssets() и Context.getResources().getAssets()
         // и не находит там нужные строки
         // начиная с версии appCompat 1.3
         return resources.assets
+    }
+
+    protected open fun initPermanentlyDeniedPermissionsHandler() {
+        permanentlyDeniedPermissionsHandler = DialogHolderDeniedPermissionsHandler(dialogFragmentsHolder, this)
+    }
+
+    @JvmOverloads
+    fun doOnPermissionsResult(
+        code: Int,
+        permissions: Collection<String>,
+        rationale: String = getString(R.string.dialog_message_permission_request_rationale),
+        shouldShowPermanentlyDeniedDialog: Boolean = true,
+        onDenied: ((Set<String>) -> Unit)? = null,
+        onNegativePermanentlyDeniedAction:  ((Set<String>) -> Unit)? = onDenied,
+        onAllGranted: () -> Unit,
+    ): PermissionsHelper.ResultListener? {
+        return permissionsHelper.doOnPermissionsResult(
+            this,
+            rationale,
+            code,
+            permissions.toSet(),
+            if (shouldShowPermanentlyDeniedDialog) permanentlyDeniedPermissionsHandler else null,
+            onDenied,
+            onNegativePermanentlyDeniedAction,
+            onAllGranted
+        ).apply {
+            permissionResultListeners[code] = this
+        }
+    }
+
+    companion object {
+
+        private const val PREFS_NAME_PERMANENTLY_DENIED = "PermanentlyDeniedPrefs"
     }
 }

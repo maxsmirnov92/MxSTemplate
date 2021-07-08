@@ -6,23 +6,26 @@ import androidx.lifecycle.SavedStateHandle
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.disposables.Disposables
 import io.reactivex.internal.operators.observable.ObservableInterval
+import me.ilich.juggler.states.State
 import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.message.SnackBuilderMessageAction
 import net.maxsmr.commonutils.gui.actions.message.ToastBuilderMessageAction
 import net.maxsmr.commonutils.gui.actions.message.ToastMessageAction
 import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
-import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.gui.fragments.dialogs.AlertTypedDialogFragment
 import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.logger.BaseLogger
 import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
-import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.logException
+import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.Companion.logException
 import net.maxsmr.core_common.BaseApplication
 import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.ui.viewmodel.BaseScreenData
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
+import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 // TODO BaseHandleableViewModel
 
@@ -33,7 +36,7 @@ const val SNACKBAR_TAG_TYPE_TWO = "two"
 
 private const val TIMER_INTERVAL = 10L
 
-private val logger = BaseLoggerHolder.getInstance().getLogger<BaseLogger>(TestViewModel::class.java)
+private val logger = BaseLoggerHolder.instance.getLogger<BaseLogger>(TestViewModel::class.java)
 
 class TestViewModel constructor(
     savedState: SavedStateHandle,
@@ -74,7 +77,7 @@ class TestViewModel constructor(
                     options = VmListEvent.AddOptions(
                         SNACKBAR_TAG_TYPE_ONE,
                         VmListEvent.AddOptions.Priority.NORMAL,
-                        VmListEvent.UniqueStrategy.REPLACE
+                        VmListEvent.UniqueStrategy.Replace
                     )
                 } else {
                     action = SnackBuilderMessageAction(
@@ -85,7 +88,7 @@ class TestViewModel constructor(
                     options = VmListEvent.AddOptions(
                         SNACKBAR_TAG_TYPE_TWO,
                         VmListEvent.AddOptions.Priority.HIGHEST,
-                        VmListEvent.UniqueStrategy.REPLACE
+                        VmListEvent.UniqueStrategy.Replace
                     )
                     // на каждый второй тик к очереди диалогов добавляется этот
                     // без перепоказа (reshow=false) в следующий раз, если в холдере уже висит такой тэг
@@ -94,7 +97,7 @@ class TestViewModel constructor(
                     showDialogCommands.setNewEvent(
                         DialogBuilderFragmentShowMessageAction(
                             dialogTag,
-                            TypedDialogFragment.DefaultTypedDialogBuilder()
+                            AlertTypedDialogFragment.Builder()
                                 .setMessage(TextMessage("Very test message ($it)"))
                                 .setButtons(TextMessage("OK")),
                             false
@@ -110,10 +113,25 @@ class TestViewModel constructor(
                 showDialogCommands.setNewEvent(
                     DialogBuilderFragmentShowMessageAction(
                         DIALOG_TAG_ERROR,
-                        TypedDialogFragment.DefaultTypedDialogBuilder()
+                        AlertTypedDialogFragment.Builder()
                             .setMessage(TextMessage("Something went wrong: $it"))
                     )
                 )
             })
+    }
+
+    class Factory @Inject constructor(
+        private val schedulersProvider: SchedulersProvider,
+        private val stringsProvider: StringsProvider
+    ) : BaseVmFactory<TestViewModel> {
+
+        override fun create(handle: SavedStateHandle, params: State.Params?): TestViewModel {
+            return TestViewModel(
+                handle,
+                schedulersProvider,
+                stringsProvider,
+                null
+            )
+        }
     }
 }

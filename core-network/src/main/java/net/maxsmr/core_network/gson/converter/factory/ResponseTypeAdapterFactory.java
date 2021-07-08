@@ -25,6 +25,8 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import net.maxsmr.commonutils.logger.BaseLogger;
+import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder;
 import net.maxsmr.core_network.error.exception.ConversionException;
 import net.maxsmr.core_network.gson.converter.safe.SafeConverter;
 
@@ -40,8 +42,9 @@ import static net.maxsmr.core_network.gson.converter.factory.TypeAdapterHelper.p
  */
 public class ResponseTypeAdapterFactory extends BaseTypeAdapterFactory {
 
+    private static final BaseLogger logger = BaseLoggerHolder.getInstance().getLogger(ResponseTypeAdapterFactory.class);
+
     private static final String PARSE_ERROR_MESSAGE_FORMAT = "Error when parse body: %s";
-    private static final String LOG_TAG = "ResponseTypeAdapterFactory";
     private SafeConverterFactory safeConverterFactory;
 
     public ResponseTypeAdapterFactory(SafeConverterFactory safeConverterFactory, boolean shouldConsumeDocument) {
@@ -77,7 +80,7 @@ public class ResponseTypeAdapterFactory extends BaseTypeAdapterFactory {
                         String body = jsonElement != null ? jsonElement.toString() : "";
                         String errorMessage = String.format(PARSE_ERROR_MESSAGE_FORMAT, body);
                         ConversionException conversionException = new ConversionException(errorMessage, e);
-                        Log.e(LOG_TAG, "parse error: " + e.getMessage(), e);
+                        logger.e("parse error: " + e.getMessage(), e);
                         throw conversionException;
 
                     }

@@ -55,13 +55,13 @@ android {
 }
 
 dependencies {
-    api fileTree(dir: "libs", include: ["*.jar"])
+    api fileTree(dir: "libs", include: ["*.jar", "*.aar"])
 
     api project(':core-common')
 
-    api project(path: ':networkutils')
 //    api (name:'networkutils-release-signed', ext:'aar')
 //    api "net.maxsmr:networkutils:networkUtilsVersion"
+//    api project(path: ':networkutils')
 
     // OkHttp
     api "com.squareup.okhttp3:okhttp:$okHttpVersion"
@@ -73,7 +73,6 @@ dependencies {
     api "com.squareup.retrofit2:adapter-rxjava2:$rxJavaAdapterVersion"
     // для возврата String в методе API
     api "com.squareup.retrofit2:converter-scalars:$retrofitVersion"
-    api "com.squareup.okhttp3:logging-interceptor:$okHttpVersion"
 
     api "com.squareup.picasso:picasso:$picassoVersion"
 

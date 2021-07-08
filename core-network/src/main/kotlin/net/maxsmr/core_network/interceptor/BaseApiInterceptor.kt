@@ -5,8 +5,11 @@ import net.maxsmr.core_network.gson.converter.factory.FIELD_API_ORIGINAL_BODY
 import net.maxsmr.core_network.model.request.api.IApiMapper
 import net.maxsmr.core_network.utils.requestBodyToString
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject
+
 /**
  * Базовый интерцептор с обёрткой для proceed
  * @param apiMap информация о зарегистрированных [BaseApiRequest]
@@ -34,9 +37,12 @@ abstract class BaseApiInterceptor(
                 wrappedJsonBody?.let {
                     if (isJsonFieldJson(wrappedJsonBody, FIELD_API_ORIGINAL_BODY)) {
                         request = request.newBuilder()
-                                .method(request.method(),
-                                        RequestBody.create(MediaType.parse("application/json"), wrappedJsonBody.get(FIELD_API_ORIGINAL_BODY).toString()))
-                                .build()
+                            .method(
+                                request.method,
+                                wrappedJsonBody.get(FIELD_API_ORIGINAL_BODY).toString()
+                                    .toRequestBody("application/json".toMediaTypeOrNull())
+                            )
+                            .build()
                     }
                 }
             }

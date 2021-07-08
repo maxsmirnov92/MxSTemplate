@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.Pair
 
-private val logger = BaseLoggerHolder.getInstance().getLogger<BaseLogger>("ValidationHelper")
+private val logger = BaseLoggerHolder.instance.getLogger<BaseLogger>("ValidationHelper")
 
 /**
  * Класс-делегат для валидации значений полей ввода

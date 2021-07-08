@@ -30,7 +30,7 @@ abstract class BaseApplication : MultiDexApplication(), Application.ActivityLife
 
     override fun onCreate() {
 
-        BaseLoggerHolder.initInstance { object: BaseLoggerHolder(false) {
+        BaseLoggerHolder.initInstance { object: BaseLoggerHolder() {
             override fun createLogger(className: String): BaseLogger {
                 return LogcatLogger(className)
             }

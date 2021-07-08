@@ -3,26 +3,15 @@ package net.maxsmr.mxstemplate.feature.test.ui
 import android.Manifest
 import android.os.Bundle
 import android.view.View
-import androidx.lifecycle.SavedStateHandle
-import me.ilich.juggler.states.State
 import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
-import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
-import net.maxsmr.core_common.arch.StringsProvider
-import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
-import net.maxsmr.mxstemplate.R
-import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
+import net.maxsmr.commonutils.gui.fragments.dialogs.AlertTypedDialogFragment
 import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
 import net.maxsmr.core_common.ui.viewmodel.delegates.viewBinding
 import net.maxsmr.core_common.ui.viewmodel.delegates.vmFactoryParams
+import net.maxsmr.mxstemplate.R
 import net.maxsmr.mxstemplate.databinding.FragmentTestBinding
 import net.maxsmr.mxstemplate.ui.common.BaseFragment
-import net.maxsmr.permissionchecker.checkAndRequestPermissionsStorage
-import pub.devrel.easypermissions.AfterPermissionGranted
 import javax.inject.Inject
-
-private const val STORAGE_PERMISSIONS_REQUEST_CODE = 1
-
-private const val DIALOG_TAG_PERMISSIONS_GRANTED = "permissions_granted"
 
 class TestFragment : BaseFragment<TestViewModel>() {
 
@@ -33,7 +22,7 @@ class TestFragment : BaseFragment<TestViewModel>() {
     override val layoutId: Int = R.layout.fragment_test
 
     @Inject
-    lateinit var viewModelFactory: Factory
+    lateinit var viewModelFactory: TestViewModel.Factory
 
     override fun onViewCreated(
         view: View,
@@ -43,45 +32,33 @@ class TestFragment : BaseFragment<TestViewModel>() {
         onRequestStoragePermissions()
     }
 
-    @AfterPermissionGranted(STORAGE_PERMISSIONS_REQUEST_CODE)
-    fun onRequestStoragePermissions() {
-        val perms = setOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-        checkAndRequestPermissionsStorage(this,
-            getString(R.string.dialog_message_permission_request_rationale),
-            STORAGE_PERMISSIONS_REQUEST_CODE,
-            perms,
-            rationaleHandler = permissionsRationaleHandler,
-            targetAction = {
-                dialogFragmentsHolder.show(
-                    DIALOG_TAG_PERMISSIONS_GRANTED,
-                    TypedDialogFragment.DefaultTypedDialogBuilder()
-                        .setMessage(TextMessage(R.string.dialog_message_permission_granted_format, perms))
-                        .setButtons(TextMessage(android.R.string.ok),)
-                        .build(requireContext())
-                )
-            }
-        )
-    }
-
-    class Factory @Inject constructor(
-        private val schedulersProvider: SchedulersProvider,
-        private val stringsProvider: StringsProvider
-    ) : BaseVmFactory<TestViewModel> {
-
-        override fun create(handle: SavedStateHandle, params: State.Params?): TestViewModel {
-            return TestViewModel(
-                handle,
-                schedulersProvider,
-                stringsProvider,
-                null
+    private fun onRequestStoragePermissions() {
+        val perms = listOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        doOnPermissionsResult(STORAGE_PERMISSIONS_REQUEST_CODE, perms, onDenied = {
+            dialogFragmentsHolder.show(
+                DIALOG_TAG_PERMISSIONS_DENIED,
+                AlertTypedDialogFragment.Builder()
+                    .setMessage(TextMessage(R.string.dialog_message_permission_denied_format, it.toString()))
+                    .setButtons(TextMessage(android.R.string.ok))
+                    .build(requireContext())
+            )
+        }) {
+            dialogFragmentsHolder.show(
+                DIALOG_TAG_PERMISSIONS_GRANTED,
+                AlertTypedDialogFragment.Builder()
+                    .setMessage(TextMessage(R.string.dialog_message_permission_granted_format, perms.toString()))
+                    .setButtons(TextMessage(android.R.string.ok))
+                    .build(requireContext())
             )
         }
     }
 
     companion object {
+
+        private const val STORAGE_PERMISSIONS_REQUEST_CODE = 1
+
+        private const val DIALOG_TAG_PERMISSIONS_GRANTED = "permissions_granted"
+        private const val DIALOG_TAG_PERMISSIONS_DENIED = "permissions_denied"
 
         fun instance() = TestFragment()
     }

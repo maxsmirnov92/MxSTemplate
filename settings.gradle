@@ -1,7 +1,3 @@
-include ':commonutils'
-include ':tasksutils'
-include ':networkutils'
-include ':permissionchecker'
 include ':core-common'
 include ':core-network'
 include ':app'

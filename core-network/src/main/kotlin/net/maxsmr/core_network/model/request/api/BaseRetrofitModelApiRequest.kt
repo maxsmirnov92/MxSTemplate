@@ -1,6 +1,6 @@
 package net.maxsmr.core_network.model.request.api
 
-import net.maxsmr.commonutils.toJsonString
+import net.maxsmr.commonutils.model.gson.toJsonString
 import net.maxsmr.core_network.di.networkComponent
 import net.maxsmr.core_network.model.request.log.BaseLogRequestData
 

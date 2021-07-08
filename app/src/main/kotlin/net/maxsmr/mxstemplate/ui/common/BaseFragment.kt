@@ -22,52 +22,36 @@ import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessag
 import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentHideMessageAction
 import net.maxsmr.commonutils.gui.actions.message.AlertDialogMessageAction
 import net.maxsmr.commonutils.gui.actions.message.BaseMessageAction
-import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
-import net.maxsmr.commonutils.gui.fragments.dialogs.holder.DialogFragmentsHolder
+import net.maxsmr.commonutils.gui.fragments.dialogs.BaseTypedDialogFragment
 import net.maxsmr.commonutils.live.event.VmEvent
 import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.live.LiveMaybe
 import net.maxsmr.commonutils.rx.live.LiveObservable
 import net.maxsmr.commonutils.rx.live.LiveSubject
-import net.maxsmr.core_common.permissions.DialogHolderPermissionsRationaleHandler
 import net.maxsmr.core_common.ui.actions.NavigationAction
 import net.maxsmr.core_common.ui.viewmodel.BaseViewModel
 import net.maxsmr.core_common.ui.viewmodel.BaseVmFactory
 import net.maxsmr.core_common.ui.viewmodel.delegates.VmFactoryParams
 import net.maxsmr.jugglerhelper.fragments.BaseJugglerFragment
-import net.maxsmr.permissionchecker.BasePermissionsRationaleHandler
-import net.maxsmr.permissionchecker.PermissionHandle
-import pub.devrel.easypermissions.EasyPermissions
+import net.maxsmr.mxstemplate.R
+import net.maxsmr.permissionchecker.PermissionsHelper
 import javax.inject.Inject
 
+/**
+ * Должен быть приаттачен к [BaseActivity]
+ */
 abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasAndroidInjector {
+
+    val dialogFragmentsHolder get() =
+        (requireActivity() as BaseActivity).dialogFragmentsHolder
 
     /**
      * Возвращает все необходимые параметры для получения инстанса [viewModel]
      */
     protected abstract val vmFactoryParams: VmFactoryParams<VM>
 
-    protected val dialogFragmentsHolder = DialogFragmentsHolder().apply {
-        // DialogFragment может быть показан только один в общем случае
-        showRule = DialogFragmentsHolder.ShowRule.SINGLE
-    }
-
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
-
-    /**
-     * Отображатель пользовательских rationale-диалогов для api 28
-     */
-    lateinit var rationaleHandler: BasePermissionsRationaleHandler
-    /**
-     * При первом запросе разрешений из PermissionsWrapper запоминаем ссылку на [PermissionHandle],
-     * чтобы в дальнейшем отчитаться о результате из onRequestPermissionsResult;
-     * в таком случае аннотацию [AfterPermissionGranted] на свой метод ставить не надо,
-     * а в другом случае (без EasyPermissions.onRequestPermissionsResult, который там вызывается) оно просто не сработает
-     */
-    var permissionHandle: PermissionHandle? = null
-
-    protected open lateinit var permissionsRationaleHandler: BasePermissionsRationaleHandler
 
     protected open var freezeEventsOnPause = true
 
@@ -93,10 +77,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     @CallSuper
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        dialogFragmentsHolder.init(viewLifecycleOwner, childFragmentManager)
-        // FIXME сделать DialogHolder реализацию
-//        rationaleHandler =
-        initPermissionsRationaleHandler()
         subscribeOnActions(viewModel)
         onViewCreated(view, savedInstanceState, viewModel)
     }
@@ -118,12 +98,27 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         viewModel.saveToBundle(outState)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // FIXME: дополнить из https://stackoverflow.com/questions/30719047/android-m-check-runtime-permission-how-to-determine-if-the-user-checked-nev
-        permissionHandle?.onRequestPermissionsResult(requestCode, permissions, grantResults) ?:
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-    }
+    /**
+     * Проверка и запрос через [PermissionsHelper] с хостовой активити.
+     * Вызывать только после аттача!
+     */
+    @JvmOverloads
+    fun doOnPermissionsResult(
+        code: Int,
+        permissions: Collection<String>,
+        rationale: String = getString(R.string.dialog_message_permission_request_rationale),
+        shouldShowPermanentlyDeniedDialog: Boolean = true,
+        onDenied: ((Set<String>) -> Unit)? = null,
+        onNegativePermanentlyDeniedAction:  ((Set<String>) -> Unit)? = onDenied,
+        onAllGranted: () -> Unit,
+    ): PermissionsHelper.ResultListener? = (requireActivity() as BaseActivity)
+        .doOnPermissionsResult(code,
+            permissions,
+            rationale,
+            shouldShowPermanentlyDeniedDialog,
+            onDenied,
+            onNegativePermanentlyDeniedAction,
+            onAllGranted)
 
     protected abstract fun onViewCreated(view: View, savedInstanceState: Bundle?, viewModel: VM)
 
@@ -141,10 +136,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     protected open fun beforeRestoreFromBundle(savedInstanceState: Bundle?) {
         // override if needed
-    }
-
-    protected open fun initPermissionsRationaleHandler() {
-        permissionsRationaleHandler = DialogHolderPermissionsRationaleHandler(dialogFragmentsHolder, viewLifecycleOwner)
     }
 
     @CallSuper
@@ -210,16 +201,18 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     }
 
     protected open fun handleTypedDialogShowMessageAction(
-        actionInfo: VmListEvent.ItemInfo<DialogBuilderFragmentShowMessageAction<*,*>>,
-        listener: NextActionListener<DialogBuilderFragmentShowMessageAction<*,*>>,
+        actionInfo: VmListEvent.ItemInfo<DialogBuilderFragmentShowMessageAction<*, *>>,
+        listener: NextActionListener<DialogBuilderFragmentShowMessageAction<*, *>>,
         listenDismissEvents: Boolean = true
     ) {
         val action = actionInfo.item
-        action.doAction(dialogFragmentsHolder)
-        if (listenDismissEvents) {
-            dialogFragmentsHolder.dismissLiveEvents(action.tag, TypedDialogFragment::class.java, null).subscribeObservableOnce {
-                // при пропадании этого диалога, спрашиваем следующую порцию
-                listener.onNext(listOf(actionInfo))
+        with(dialogFragmentsHolder) {
+            action.doAction(this)
+            if (listenDismissEvents) {
+                this.dismissLiveEvents(action.tag, BaseTypedDialogFragment::class.java, null).subscribeObservableOnce {
+                    // при пропадании этого диалога, спрашиваем следующую порцию
+                    listener.onNext(listOf(actionInfo))
+                }
             }
         }
     }

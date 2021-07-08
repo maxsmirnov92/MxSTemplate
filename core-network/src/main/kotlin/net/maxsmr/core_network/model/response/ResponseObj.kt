@@ -3,7 +3,7 @@ package net.maxsmr.core_network.model.response
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import net.maxsmr.commonutils.entity.EmptyValidable
-import net.maxsmr.commonutils.fromJsonObjectString
+import net.maxsmr.commonutils.model.gson.fromJsonObjectString
 import java.lang.reflect.Type
 
 open class ResponseObj<D> : EmptyValidable {

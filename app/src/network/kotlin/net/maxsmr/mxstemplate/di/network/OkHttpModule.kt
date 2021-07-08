@@ -6,6 +6,8 @@ import com.squareup.picasso.OkHttp3Downloader
 import com.squareup.picasso.Picasso
 import dagger.Module
 import dagger.Provides
+import net.maxsmr.commonutils.logger.BaseLogger
+import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder
 import net.maxsmr.core_network.interceptor.FailRetryInterceptor
 import net.maxsmr.core_network.interceptor.RemoteLoggingInterceptor
 import net.maxsmr.core_network.interceptor.ServiceInterceptor
@@ -13,6 +15,7 @@ import net.maxsmr.core_network.model.request.api.IApiMapper
 import net.maxsmr.mxstemplate.BuildConfig
 import net.maxsmr.mxstemplate.di.PerApplication
 import net.maxsmr.mxstemplate.di.app.DI_NAME_VERSION_NAME
+import net.maxsmr.mxstemplate.feature.test.ui.TestViewModel
 import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.Interceptor
@@ -37,11 +40,11 @@ private const val NETWORK_TIMEOUT = 30L //sec
 private const val MAX_RETRIES_ANY_REQUEST = 10
 private const val MAX_RETRIES_LOG_REQUEST = 1
 
-private const val HTTP_LOG_TAG = "OkHttp"
-
 // Размер дискового кеша пикассо = 250 Мб
 private const val PICASSO_DISK_CACHE_SIZE = (1024 * 1024 * 250).toLong()
 private const val PICASSO_CACHE = "picasso-cache"
+
+private val logger = BaseLoggerHolder.instance.getLogger<BaseLogger>(OkHttpModule::class.java)
 
 @Module
 class OkHttpModule {
@@ -88,9 +91,11 @@ class OkHttpModule {
     @Provides
     @PerApplication
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor { message ->
-            Log.d("HttpLoggingInterceptor", "$HTTP_LOG_TAG $message")
-        }.apply {
+        return HttpLoggingInterceptor(object  : HttpLoggingInterceptor.Logger {
+            override fun log(message: String) {
+                logger.d("OkHttp message: $message")
+            }
+        }).apply {
             level = if (BuildConfig.DEBUG)
                 HttpLoggingInterceptor.Level.BODY
             else

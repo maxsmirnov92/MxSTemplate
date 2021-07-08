@@ -129,10 +129,10 @@ open class HttpProtocolException(
 
         init {
 
-            val request = rawResponse?.request()
-            url = request?.url()?.toString() ?: EMPTY_STRING
-            method = request?.method() ?: EMPTY_STRING
-            headers = headersToMap(request?.headers())
+            val request = rawResponse?.request
+            url = request?.url?.toString() ?: EMPTY_STRING
+            method = request?.method ?: EMPTY_STRING
+            headers = headersToMap(request?.headers)
 
             requestBodyString = if (request != null) {
                 try {
@@ -205,8 +205,8 @@ open class HttpProtocolException(
     }
 
     open class RawBuilder(rawResponse: Response?, cause: Throwable?) : BaseBuilder(
-        rawResponse?.code() ?: HttpErrorCode.UNKNOWN.code,
-        rawResponse?.message() ?: EMPTY_STRING,
+        rawResponse?.code ?: HttpErrorCode.UNKNOWN.code,
+        rawResponse?.message ?: EMPTY_STRING,
         cause,
         rawResponse,
     ) {

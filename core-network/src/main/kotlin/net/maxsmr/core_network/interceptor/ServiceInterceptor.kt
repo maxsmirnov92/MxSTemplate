@@ -9,6 +9,8 @@ import net.maxsmr.core_network.utils.appendServiceFields
 import net.maxsmr.core_network.utils.getPath
 import net.maxsmr.core_network.utils.requestBodyToString
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject import java.io.IOException
 
@@ -62,8 +64,8 @@ class ServiceInterceptor constructor(
                                 wrappedJsonBody.put(FIELD_API_ORIGINAL_BODY, jsonBody)
                                 // изменённый реквест для продолжения цепочки
                                 request = originalRequest.newBuilder()
-                                        .method(originalRequest.method(),
-                                                RequestBody.create(MediaType.parse("application/json"), wrappedJsonBody.toString().trim()))
+                                        .method(originalRequest.method,
+                                            wrappedJsonBody.toString().trim().toRequestBody("application/json".toMediaTypeOrNull()))
                                         .build()
                             }
                         }

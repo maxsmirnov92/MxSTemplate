@@ -10,7 +10,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.disposables.Disposables
 import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
 import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
-import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.gui.fragments.dialogs.AlertTypedDialogFragment
 import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
@@ -75,7 +75,7 @@ abstract class BaseNetworkingViewModel<SD : BaseScreenData>(
         if (!it) showDialogCommands.setNewEvent(
             DialogBuilderFragmentShowMessageAction(
                 DIALOG_TAG_NO_CONNECTION,
-                TypedDialogFragment.DefaultTypedDialogBuilder()
+                AlertTypedDialogFragment.Builder()
                     .setMessage(TextMessage(R.string.message_no_internet))
                     .setButtons(TextMessage(android.R.string.ok)),
                 false

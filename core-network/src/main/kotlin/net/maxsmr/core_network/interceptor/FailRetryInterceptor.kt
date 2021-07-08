@@ -21,7 +21,7 @@ class FailRetryInterceptor(
 
         while (!response.isSuccessful && maxTries > 0 && retryCount < maxTries) {
             retryCount++
-            Log.d(LOG_TAG, "Request failed (code: ${response.code()}), next retry: $retryCount/$maxTries")
+            Log.d(LOG_TAG, "Request failed (code: ${response.code}), next retry: $retryCount/$maxTries")
 
             // retry the request
             response = chain.proceed(request)

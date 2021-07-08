@@ -33,7 +33,8 @@ import net.maxsmr.commonutils.gui.actions.dialog.DialogFragmentHideMessageAction
 import net.maxsmr.commonutils.gui.actions.message.AlertDialogMessageAction
 import net.maxsmr.commonutils.gui.actions.message.BaseMessageAction
 import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
-import net.maxsmr.commonutils.gui.fragments.dialogs.TypedDialogFragment
+import net.maxsmr.commonutils.gui.fragments.dialogs.AlertTypedDialogFragment
+import net.maxsmr.commonutils.gui.fragments.dialogs.ProgressDialogFragment
 import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.BiFunctionSafe
@@ -45,7 +46,6 @@ import net.maxsmr.core_common.arch.rx.ON_ERROR_MISSING
 import net.maxsmr.core_common.arch.rx.callinfo.*
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
 import net.maxsmr.core_common.ui.actions.NavigationAction
-import net.maxsmr.core_common.ui.dialog.ProgressDialogFragment
 import net.maxsmr.core_common.ui.viewmodel.delegates.getPersistableKey
 import kotlin.reflect.KProperty
 
@@ -217,7 +217,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
             showDialogCommands.value = showDialogCommands.newEvent(
                 DialogBuilderFragmentShowMessageAction(
                     tag,
-                    ProgressDialogFragment.ProgressDialogBuilder(),
+                    ProgressDialogFragment.ProgressBuilder(),
                     false
                 )
             )
@@ -231,7 +231,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         showDialogCommands.value = showDialogCommands.newEvent(
             DialogBuilderFragmentShowMessageAction(
                 tag,
-                TypedDialogFragment.DefaultTypedDialogBuilder()
+                AlertTypedDialogFragment.Builder()
                     .setMessage(errorMessage)
                     .setButtons(TextMessage(android.R.string.ok), null, null)
             )

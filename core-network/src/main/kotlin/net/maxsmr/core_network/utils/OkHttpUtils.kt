@@ -2,8 +2,8 @@ package net.maxsmr.core_network.utils
 
 import android.text.TextUtils
 import net.maxsmr.commonutils.*
+import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.Companion.throwRuntimeException
 import net.maxsmr.commonutils.text.EMPTY_STRING
-import net.maxsmr.commonutils.logger.holder.BaseLoggerHolder.throwRuntimeException
 import net.maxsmr.core_network.error.exception.CancelledRuntimeException
 import okhttp3.*
 import okio.Buffer
@@ -26,14 +26,14 @@ fun executeCall(
 }
 
 fun getPath(request: Request): String =
-    TextUtils.join("/", request.url().pathSegments())
+    TextUtils.join("/", request.url.pathSegments)
 
 @Throws(RuntimeException::class)
 fun requestBodyToString(request: Request): String {
     try {
         val copy = request.newBuilder().build()
         val buffer = Buffer()
-        copy.body()?.writeTo(buffer)
+        copy.body?.writeTo(buffer)
         return buffer.readUtf8() ?: EMPTY_STRING
     } catch (e: IOException) {
         throw RuntimeException("Cannot convert request body to string", e)
@@ -42,7 +42,7 @@ fun requestBodyToString(request: Request): String {
 
 @Throws(RuntimeException::class)
 fun responseBodyToByteArray(response: Response?, previousDownloadedSize: Long? = null): ByteArray {
-    val responseBody = response?.body() ?: throw NullPointerException("responseBody is null")
+    val responseBody = response?.body ?: throw NullPointerException("responseBody is null")
     skipBytesIfSupported(response, previousDownloadedSize)
     try {
         return responseBody.bytes()
@@ -53,7 +53,7 @@ fun responseBodyToByteArray(response: Response?, previousDownloadedSize: Long? =
 
 @Throws(RuntimeException::class)
 fun responseBodyToString(response: Response?, previousDownloadedSize: Long? = null): String {
-    val responseBody = response?.body() ?: throw NullPointerException("responseBody is null")
+    val responseBody = response?.body ?: throw NullPointerException("responseBody is null")
     skipBytesIfSupported(response, previousDownloadedSize)
     try {
         return responseBody.string() ?: EMPTY_STRING
@@ -76,7 +76,7 @@ fun responseBodyToOutputStream(
         throw NullPointerException("outputStream is null")
     }
     skipBytesIfSupported(response, previousDownloadedSize)
-    val responseBody = response?.body() ?: throw NullPointerException("responseBody is null")
+    val responseBody = response?.body ?: throw NullPointerException("responseBody is null")
     val contentLength = responseBody.contentLength()
     try {
         val inputStream = responseBody.byteStream()
@@ -122,9 +122,9 @@ fun isResumeDownloadSupported(response: Response?): Boolean {
 fun headersToMap(headers: Headers?): Map<String, String> {
     val result = mutableMapOf<String, String>()
     if (headers != null) {
-        for (i in 0 until headers.size()) {
+        for (i in 0 until headers.size) {
             val name = headers.name(i)
-            result[name] = headers.get(name) ?: EMPTY_STRING
+            result[name] = headers[name] ?: EMPTY_STRING
         }
     }
     return result
@@ -136,7 +136,7 @@ fun isResponseOk(responseCode: Int): Boolean =
 @Throws(RuntimeException::class)
 private fun skipBytesIfSupported(response: Response?, downloadedSize: Long?) {
     if (downloadedSize != null && downloadedSize > 0) {
-        val responseBody = response?.body()
+        val responseBody = response?.body
         val source = responseBody?.source() ?: throw RuntimeException("response body source is null")
         if (isResumeDownloadSupported(response)) {
             try {
