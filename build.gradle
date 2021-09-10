@@ -10,8 +10,8 @@ buildscript {
         targetSdkVersion = 30
         minSdkVersion = 17
 
-        gradlePluginVersion = '4.1.2'
-        buildToolsVersion = '29.0.2'
+        gradlePluginVersion = '7.0.2'
+        buildToolsVersion = '30.0.2'
         kotlinVersion = '1.4.32'
         kotlinGradlePluginVersion = kotlinVersion
 
@@ -30,9 +30,6 @@ buildscript {
         picassoVersion = '2.71828'
 
         gsonConverterVersion = '2.6.1'
-
-        // Ferro Rx
-        ferroRxVersion = '2.0.0'
 
         roomPersistenceVersion = '2.2.5'
 
@@ -84,7 +81,6 @@ buildscript {
 
     repositories {
         google()
-        jcenter()
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
@@ -99,7 +95,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
 //        maven { url 'https://dl.bintray.com/maxsmirnov92/maven' }
 //        maven { url 'https://dl.bintray.com/dsokolov/maven' }

@@ -75,9 +75,6 @@ dependencies {
 //    api project(path: ':jugglerhelper')
 //    api project(path: ':recyclerview-lib')
 
-    // ferro-rx
-    api group: 'com.agna.ferro', name: 'ferro-rx', version: "$ferroRxVersion"
-
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"

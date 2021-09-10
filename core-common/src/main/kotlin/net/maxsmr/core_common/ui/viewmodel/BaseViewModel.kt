@@ -7,16 +7,10 @@ import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.annotation.CallSuper
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
-import com.agna.ferro.rx.CompletableOperatorFreeze
-import com.agna.ferro.rx.MaybeOperatorFreeze
-import com.agna.ferro.rx.ObservableOperatorFreeze
-import com.agna.ferro.rx.SingleOperatorFreeze
+import androidx.lifecycle.*
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.*
+import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.internal.functions.Functions
@@ -24,7 +18,6 @@ import io.reactivex.internal.observers.LambdaObserver
 import io.reactivex.observers.DisposableCompletableObserver
 import io.reactivex.observers.DisposableMaybeObserver
 import io.reactivex.observers.DisposableSingleObserver
-import io.reactivex.subjects.BehaviorSubject
 import me.ilich.juggler.change.Remove
 import net.maxsmr.commonutils.gui.actions.BaseTaggedViewModelAction
 import net.maxsmr.commonutils.gui.actions.BaseViewModelAction
@@ -39,6 +32,7 @@ import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.BiFunctionSafe
 import net.maxsmr.commonutils.rx.functions.ConsumerSafe
+import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_common.arch.ErrorHandler
 import net.maxsmr.core_common.arch.StringsProvider
 import net.maxsmr.core_common.arch.rx.EMPTY_ACTION
@@ -65,35 +59,24 @@ abstract class BaseViewModel<SD : BaseScreenData>(
      * или оставить тот, что из модуля
      */
     protected var errorHandler: ErrorHandler?
-) : ViewModel() {
+) : ViewModel(), LifecycleOwner {
 
-    val navigationCommands: MutableLiveData<VmListEvent<NavigationAction>> = MutableLiveData()
+    val navigationCommands = MutableLiveData<VmListEvent<NavigationAction>>()
 
-    val toastMessageCommands: MutableLiveData<VmListEvent<BaseMessageAction<Toast, Context>>> = MutableLiveData()
+    val toastMessageCommands = MutableLiveData<VmListEvent<BaseMessageAction<Toast, Context>>>()
 
-    val snackMessageCommands: MutableLiveData<VmListEvent<BaseMessageAction<Snackbar, View>>> = MutableLiveData()
+    val snackMessageCommands = MutableLiveData<VmListEvent<BaseMessageAction<Snackbar, View>>>()
 
-    val showDialogCommands: MutableLiveData<VmListEvent<DialogBuilderFragmentShowMessageAction<*,*>>> =
-        MutableLiveData()
+    val showDialogCommands = MutableLiveData<VmListEvent<DialogBuilderFragmentShowMessageAction<*, *>>>()
 
-    val hideDialogCommands: MutableLiveData<VmListEvent<DialogFragmentHideMessageAction>> =
-        MutableLiveData()
+    val hideDialogCommands = MutableLiveData<VmListEvent<DialogFragmentHideMessageAction>>()
 
     @Deprecated("use showMessageCommands or hideMessageCommands")
-    val alertDialogMessageCommands: MutableLiveData<VmListEvent<AlertDialogMessageAction>> =
-        MutableLiveData()
+    val alertDialogMessageCommands = MutableLiveData<VmListEvent<AlertDialogMessageAction>>()
 
 
     protected val KProperty<*>.persistableKey: String
         get() = this@BaseViewModel.getPersistableKey(this)
-
-    /**
-     * Маппинг селекторов, привязанных к конкретной view:
-     * изначальная/пересозданная будет иметь свой селектор, далее применяемый в subscribe
-     */
-    private val freezeSelectorsMap = mutableMapOf<String, BehaviorSubject<Boolean>>()
-
-    private var currentFreezeSelector: BehaviorSubject<Boolean>? = null
 
     private val disposables = CompositeDisposable()
 
@@ -101,31 +84,13 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         Handler(Looper.getMainLooper()).post { onInitialized() }
     }
 
+    override fun getLifecycle() = LifecycleRegistry(this)
+
     @CallSuper
     override fun onCleared() {
         super.onCleared()
         disposables.clear()
-    }
-
-    /**
-     * Должен быть вызван последней view, которая пользует данную VM
-     */
-    fun notifyResumed(tag: String) {
-        getCurrentSelector(tag).onNext(false)
-    }
-
-    fun notifyPaused(tag: String) {
-        getCurrentSelector(tag).onNext(true)
-    }
-
-    fun getCurrentSelector(tag: String): BehaviorSubject<Boolean> {
-        var selector = freezeSelectorsMap[tag]
-        if (selector == null) {
-            selector = BehaviorSubject.createDefault(false)
-            freezeSelectorsMap[tag] = selector
-        }
-        currentFreezeSelector = selector
-        return selector
+        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     }
 
     /**
@@ -158,6 +123,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
      */
     @CallSuper
     protected open fun onInitialized() {
+        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         observeValues()
     }
 
@@ -165,7 +131,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
      * observeForever для LD в этом методе
      */
     protected open fun observeValues() {
-        // override if needed
+        // 4ide if needed
     }
 
     /**
@@ -240,7 +206,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         observable: Observable<T>,
-        operator: ObservableOperatorFreeze<T>?,
+        operator: ObservableOperator<T, T>?,
         observer: LambdaObserver<T>
     ): Disposable {
         val disposable =
@@ -258,7 +224,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         single: Single<T>,
-        operator: SingleOperatorFreeze<T>?,
+        operator: SingleOperator<T, T>?,
         observer: DisposableSingleObserver<T>
     ): Disposable {
         val disposable = if (operator != null) {
@@ -275,7 +241,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun subscribe(
         completable: Completable,
-        operator: CompletableOperatorFreeze?,
+        operator: CompletableOperator?,
         observer: DisposableCompletableObserver
     ): Disposable {
         val disposable = if (operator != null) {
@@ -292,7 +258,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         maybe: Maybe<T>,
-        operator: MaybeOperatorFreeze<T>?,
+        operator: MaybeOperator<T, T>?,
         observer: DisposableMaybeObserver<T>
     ): Disposable {
         val disposable = if (operator != null) {
@@ -309,7 +275,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         observable: Observable<T>,
-        operator: ObservableOperatorFreeze<T>?,
+        operator: ObservableOperator<T, T>?,
         onNext: ConsumerSafe<T>,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
@@ -318,7 +284,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         observable: Observable<T>,
-        operator: ObservableOperatorFreeze<T>?,
+        operator: ObservableOperator<T, T>?,
         onNext: ConsumerSafe<T>,
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
@@ -332,7 +298,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         single: Single<T>,
-        operator: SingleOperatorFreeze<T>?,
+        operator: SingleOperator<T, T>?,
         onSuccess: ConsumerSafe<T>,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
@@ -349,7 +315,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun <T> subscribe(
         maybe: Maybe<T>,
-        operator: MaybeOperatorFreeze<T>?,
+        operator: MaybeOperator<T, T>?,
         onSuccess: ConsumerSafe<T>,
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
@@ -372,7 +338,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 
     protected fun subscribe(
         completable: Completable,
-        operator: CompletableOperatorFreeze?,
+        operator: CompletableOperator?,
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
@@ -491,7 +457,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onComplete: ActionSafe,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
-        return subscribe(completable, createCompletableOperatorFreeze(), onComplete, onError)
+        return subscribe(completable, createCompletableOperator(), onComplete, onError)
     }
 
 
@@ -523,7 +489,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         onNext: ConsumerSafe<T>,
         onError: ConsumerSafe<Throwable>
     ): Disposable {
-        return subscribe(observable, createTakeLastFrozenPredicate<T>(), onNext, onError)
+        return subscribe(observable, createTakeLastFrozenPredicate(), onNext, onError)
     }
 
     /**
@@ -543,7 +509,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observable: Observable<T>,
         onNext: ConsumerSafe<T>
     ): Disposable {
-        return subscribe(observable, createTakeLastFrozenPredicate<T>(), onNext, ON_ERROR_MISSING)
+        return subscribe(observable, createTakeLastFrozenPredicate(), onNext, ON_ERROR_MISSING)
     }
 
     /**
@@ -563,7 +529,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         observable: Observable<T>,
         observer: LambdaObserver<T>
     ): Disposable {
-        return subscribe(observable, createTakeLastFrozenPredicate<T>(), observer)
+        return subscribe(observable, createTakeLastFrozenPredicate(), observer)
     }
 
     //endregion
@@ -628,7 +594,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
                 onNext,
                 onError,
                 Functions.EMPTY_ACTION,
-                Functions.emptyConsumer<Disposable>()
+                Functions.emptyConsumer()
             )
         )
     }
@@ -1046,25 +1012,16 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         }
     }
 
-    protected fun <T> createObservableOperatorFreeze(replaceFrozenEventPredicate: BiFunctionSafe<T, T, Boolean>): ObservableOperatorFreeze<T>? {
-        return if (currentFreezeSelector != null)  ObservableOperatorFreeze(currentFreezeSelector, replaceFrozenEventPredicate) else null
-    }
+    protected fun <T> createObservableOperatorFreeze(replaceFrozenEventPredicate: BiFunctionSafe<T, T, Boolean>): ObservableOperator<T, T>? =
+        null
 
-    protected fun <T> createObservableOperatorFreeze(): ObservableOperatorFreeze<T>? {
-        return if (currentFreezeSelector != null) ObservableOperatorFreeze(currentFreezeSelector) else null
-    }
+    protected fun <T> createObservableOperatorFreeze(): ObservableOperator<T, T>? = null
 
-    protected fun <T> createSingleOperatorFreeze(): SingleOperatorFreeze<T>? {
-        return if (currentFreezeSelector != null) SingleOperatorFreeze(currentFreezeSelector) else null
-    }
+    protected fun <T> createSingleOperatorFreeze(): SingleOperator<T, T>? = null
 
-    protected fun createCompletableOperatorFreeze(): CompletableOperatorFreeze? {
-        return if (currentFreezeSelector != null)  CompletableOperatorFreeze(currentFreezeSelector) else null
-    }
+    protected fun createCompletableOperator(): CompletableOperator? = null
 
-    protected fun <T> createMaybeOperatorFreeze(): MaybeOperatorFreeze<T>? {
-        return if (currentFreezeSelector != null)  MaybeOperatorFreeze(currentFreezeSelector) else null
-    }
+    protected fun <T> createMaybeOperatorFreeze(): MaybeOperator<T, T>? = null
 
     protected fun <Action, Actor> Collection<BaseTaggedViewModelAction<Actor>>.findActionByTag(
         tag: String,
@@ -1075,16 +1032,32 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         removeAll { it.tag == tag }
 
     @JvmOverloads
-    protected fun <T: BaseViewModelAction<*>> LiveData<VmListEvent<T>>.newEvent(value: T, options: VmListEvent.AddOptions = VmListEvent.AddOptions()): VmListEvent<T> {
+    protected fun <T : BaseViewModelAction<*>> LiveData<VmListEvent<T>>.newEvent(
+        value: T,
+        options: VmListEvent.AddOptions = VmListEvent.AddOptions()
+    ): VmListEvent<T> {
         return this.value?.new(value, options) ?: VmListEvent(value, options)
     }
 
-    protected fun <T: BaseViewModelAction<*>> LiveData<VmListEvent<T>>.newEvent(collection: Map<T, VmListEvent.AddOptions>): VmListEvent<T> {
+    protected fun <T : BaseViewModelAction<*>> LiveData<VmListEvent<T>>.newEvent(collection: Map<T, VmListEvent.AddOptions>): VmListEvent<T> {
         return this.value?.new(collection) ?: VmListEvent(collection)
     }
 
+    /**
+     * Для случаев типа Toast или DialogFragment - обрабатываются все разом далее в другом месте
+     * @param tag в этом и других вызовах нужен только если unique отличен от None
+     */
     @JvmOverloads
-    protected fun <T: BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewEvent(
+    protected fun <T : BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewConsumableEvent(
+        value: T,
+        tag: String = EMPTY_STRING,
+        priority: VmListEvent.AddOptions.Priority = VmListEvent.AddOptions.Priority.NORMAL,
+        unique: VmListEvent.UniqueStrategy = VmListEvent.UniqueStrategy.None,
+        setOrPost: Boolean = true
+    ): VmListEvent<T> = setNewEvent(value, VmListEvent.AddOptions(tag, priority, unique, false), setOrPost)
+
+    @JvmOverloads
+    protected fun <T : BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewEvent(
         value: T,
         options: VmListEvent.AddOptions = VmListEvent.AddOptions(),
         setOrPost: Boolean = true
@@ -1098,7 +1071,7 @@ abstract class BaseViewModel<SD : BaseScreenData>(
         return event
     }
 
-    protected fun <T: BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewEvent(
+    protected fun <T : BaseViewModelAction<*>> MutableLiveData<VmListEvent<T>>.setNewEvent(
         collection: Map<T, VmListEvent.AddOptions>,
         setOrPost: Boolean = true
     ): VmListEvent<T> {

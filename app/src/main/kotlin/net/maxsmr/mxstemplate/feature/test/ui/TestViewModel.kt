@@ -53,9 +53,9 @@ class TestViewModel constructor(
     override fun onInitialized() {
         super.onInitialized()
         // тост, собранный через билдер с наиболее частыми филдами
-        toastMessageCommands.setNewEvent(ToastBuilderMessageAction(ToastBuilderMessageAction.Builder(message = TextMessage("TEST 1"))))
+        toastMessageCommands.setNewConsumableEvent(ToastBuilderMessageAction(ToastBuilderMessageAction.Builder(message = TextMessage("TEST 1"))))
         // тост, сделанный обычным способом
-        toastMessageCommands.setNewEvent(ToastMessageAction(Toast.makeText(BaseApplication.context, "TEST 2", Toast.LENGTH_SHORT)))
+        toastMessageCommands.setNewConsumableEvent(ToastMessageAction(Toast.makeText(BaseApplication.context, "TEST 2", Toast.LENGTH_SHORT)))
         startTimer()
     }
 
@@ -94,7 +94,7 @@ class TestViewModel constructor(
                     // без перепоказа (reshow=false) в следующий раз, если в холдере уже висит такой тэг
                     // НО: в самом DialogFragment возможен показ только одного диалога в данный момент, поэтому checkSingle=true
                     val dialogTag = "${DIALOG_TAG_TEST}_$it"
-                    showDialogCommands.setNewEvent(
+                    showDialogCommands.setNewConsumableEvent(
                         DialogBuilderFragmentShowMessageAction(
                             dialogTag,
                             AlertTypedDialogFragment.Builder()
@@ -102,7 +102,7 @@ class TestViewModel constructor(
                                 .setButtons(TextMessage("OK")),
                             false
                         ),
-                        VmListEvent.AddOptions(dialogTag)
+                        dialogTag
                     )
                 }
                 // у обоих снеков вывод возможен по одному экземпляру в текущий момент (checkSingle = true)
@@ -110,12 +110,13 @@ class TestViewModel constructor(
                 counter++
             }, {
                 logException(logger, it)
-                showDialogCommands.setNewEvent(
+                showDialogCommands.setNewConsumableEvent(
                     DialogBuilderFragmentShowMessageAction(
                         DIALOG_TAG_ERROR,
                         AlertTypedDialogFragment.Builder()
                             .setMessage(TextMessage("Something went wrong: $it"))
-                    )
+                    ),
+                    DIALOG_TAG_ERROR
                 )
             })
     }

@@ -1,5 +1,6 @@
 package net.maxsmr.mxstemplate.ui.common
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.view.View
@@ -7,15 +8,11 @@ import android.widget.Toast
 import androidx.annotation.CallSuper
 import androidx.lifecycle.*
 import androidx.savedstate.SavedStateRegistryOwner
-import com.agna.ferro.rx.MaybeOperatorFreeze
-import com.agna.ferro.rx.ObservableOperatorFreeze
 import com.google.android.material.snackbar.Snackbar
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
 import dagger.android.support.AndroidSupportInjection
-import io.reactivex.MaybeOperator
-import io.reactivex.ObservableOperator
 import me.ilich.juggler.states.State
 import net.maxsmr.commonutils.gui.actions.BaseViewModelAction
 import net.maxsmr.commonutils.gui.actions.dialog.DialogBuilderFragmentShowMessageAction
@@ -42,8 +39,9 @@ import javax.inject.Inject
  */
 abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasAndroidInjector {
 
-    val dialogFragmentsHolder get() =
-        (requireActivity() as BaseActivity).dialogFragmentsHolder
+    val dialogFragmentsHolder
+        get() =
+            (requireActivity() as BaseActivity).dialogFragmentsHolder
 
     /**
      * Возвращает все необходимые параметры для получения инстанса [viewModel]
@@ -52,8 +50,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
 
     @Inject
     lateinit var androidInjector: DispatchingAndroidInjector<Any>
-
-    protected open var freezeEventsOnPause = true
 
     protected lateinit var viewModel: VM
         private set
@@ -81,18 +77,6 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         onViewCreated(view, savedInstanceState, viewModel)
     }
 
-    override fun onResume() {
-        super.onResume()
-        viewModel.notifyResumed(this::class.java.name)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (freezeEventsOnPause) {
-            viewModel.notifyPaused(this::class.java.name)
-        }
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         viewModel.saveToBundle(outState)
@@ -109,16 +93,18 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         rationale: String = getString(R.string.dialog_message_permission_request_rationale),
         shouldShowPermanentlyDeniedDialog: Boolean = true,
         onDenied: ((Set<String>) -> Unit)? = null,
-        onNegativePermanentlyDeniedAction:  ((Set<String>) -> Unit)? = onDenied,
+        onNegativePermanentlyDeniedAction: ((Set<String>) -> Unit)? = onDenied,
         onAllGranted: () -> Unit,
     ): PermissionsHelper.ResultListener? = (requireActivity() as BaseActivity)
-        .doOnPermissionsResult(code,
+        .doOnPermissionsResult(
+            code,
             permissions,
             rationale,
             shouldShowPermanentlyDeniedDialog,
             onDenied,
             onNegativePermanentlyDeniedAction,
-            onAllGranted)
+            onAllGranted
+        )
 
     protected abstract fun onViewCreated(view: View, savedInstanceState: Bundle?, viewModel: VM)
 
@@ -160,10 +146,11 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
         action.doAction(navigateTo())
     }
 
+    @SuppressLint("NewApi")
     protected open fun handleToastMessageAction(
         actionInfo: VmListEvent.ItemInfo<BaseMessageAction<Toast, Context>>,
         listener: NextActionListener<BaseMessageAction<Toast, Context>>,
-        listenDismissEvents: Boolean = false
+        listenDismissEvents: Boolean = actionInfo.isSingle
     ) {
         val action = actionInfo.item
         action.doAction(requireContext())
@@ -179,7 +166,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open fun handleSnackMessageAction(
         actionInfo: VmListEvent.ItemInfo<BaseMessageAction<Snackbar, View>>,
         listener: NextActionListener<BaseMessageAction<Snackbar, View>>,
-        listenDismissEvents: Boolean = true
+        listenDismissEvents: Boolean = actionInfo.isSingle
     ) {
         val action = actionInfo.item
         getViewForSnack(action).let { view ->
@@ -203,7 +190,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     protected open fun handleTypedDialogShowMessageAction(
         actionInfo: VmListEvent.ItemInfo<DialogBuilderFragmentShowMessageAction<*, *>>,
         listener: NextActionListener<DialogBuilderFragmentShowMessageAction<*, *>>,
-        listenDismissEvents: Boolean = true
+        listenDismissEvents: Boolean = actionInfo.isSingle
     ) {
         val action = actionInfo.item
         with(dialogFragmentsHolder) {
@@ -289,20 +276,20 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     @JvmOverloads
     protected fun <T> LiveObservable<T>.subscribeObservable(
         owner: LifecycleOwner = viewLifecycleOwner,
-        operator: ObservableOperator<T, T>? = ObservableOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+//        operator: ObservableOperator<T, T>? = ObservableOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
         emitOnce: Boolean = false,
         onNext: (T) -> Unit
     ) {
-        subscribe(owner, operator, emitOnce, onNext)
+        subscribe(owner, emitOnce = emitOnce, onNext = onNext)
     }
 
     protected fun <T> LiveObservable<T>.subscribeObservableOnce(
         owner: LifecycleOwner = viewLifecycleOwner,
-        operator: ObservableOperator<T, T>? = ObservableOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+//        operator: ObservableOperator<T, T>? = ObservableOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
         emitOnce: Boolean = false,
         onNext: (T) -> Unit
     ) {
-        subscribe(owner, operator, emitOnce) {
+        subscribe(owner, emitOnce = emitOnce) {
             onNext(it)
             unsubscribe(owner)
         }
@@ -311,21 +298,21 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     @JvmOverloads
     protected fun <T> LiveMaybe<T>.subscribeMaybe(
         owner: LifecycleOwner = viewLifecycleOwner,
-        operator: MaybeOperator<T, T>? = MaybeOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+//        operator: MaybeOperator<T, T>? = MaybeOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
         emitOnce: Boolean = false,
         onNext: (T) -> Unit
     ) {
-        subscribe(owner, operator, emitOnce, onNext)
+        subscribe(owner, emitOnce = emitOnce, onSuccess = onNext)
     }
 
     @JvmOverloads
     protected fun <T> LiveMaybe<T>.subscribeMaybeOnce(
         owner: LifecycleOwner = viewLifecycleOwner,
-        operator: MaybeOperator<T, T>? = MaybeOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
+//        operator: MaybeOperator<T, T>? = MaybeOperatorFreeze(viewModel.getCurrentSelector(this::class.java.name)),
         emitOnce: Boolean = false,
         onNext: (T) -> Unit
     ) {
-        subscribe(owner, operator, emitOnce) {
+        subscribe(owner, emitOnce = emitOnce) {
             onNext(it)
             unsubscribe(owner)
         }
