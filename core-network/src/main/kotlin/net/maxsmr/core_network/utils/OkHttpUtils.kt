@@ -34,7 +34,7 @@ fun requestBodyToString(request: Request): String {
         val copy = request.newBuilder().build()
         val buffer = Buffer()
         copy.body?.writeTo(buffer)
-        return buffer.readUtf8() ?: EMPTY_STRING
+        return buffer.readUtf8()
     } catch (e: IOException) {
         throw RuntimeException("Cannot convert request body to string", e)
     }

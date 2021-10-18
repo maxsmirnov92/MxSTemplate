@@ -73,7 +73,7 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     @CallSuper
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        subscribeOnActions(viewModel)
+        observeVmEvents(viewModel)
         onViewCreated(view, savedInstanceState, viewModel)
     }
 
@@ -125,9 +125,10 @@ abstract class BaseFragment<VM : BaseViewModel<*>> : BaseJugglerFragment(), HasA
     }
 
     @CallSuper
-    protected open fun subscribeOnActions(viewModel: VM) {
+    protected open fun observeVmEvents(viewModel: VM) {
         subscribeOnDialogEvents()
         viewModel.navigationCommands.observeListEvents { action, _ -> handleNavigationAction(action.item) }
+        viewModel.intentNavigationCommands.observe { it.get()?.doAction(this) }
         viewModel.toastMessageCommands.observeListEvents { action, listener ->
             handleToastMessageAction(action, listener)
             // слушать dismiss-колбеки здесь не надо, т.к. уже очистили свою очередь - показ разруливается системой

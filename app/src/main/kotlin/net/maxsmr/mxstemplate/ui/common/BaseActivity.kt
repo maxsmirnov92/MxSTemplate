@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_LOCALE_CHANGED
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import android.content.res.Configuration
 import android.os.Build
@@ -23,10 +24,11 @@ import net.maxsmr.mxstemplate.R
 import net.maxsmr.mxstemplate.ui.common.permissions.DialogHolderDeniedPermissionsHandler
 import net.maxsmr.permissionchecker.BaseDeniedPermissionsHandler
 import net.maxsmr.permissionchecker.PermissionsHelper
+import pub.devrel.easypermissions.EasyPermissions
 import java.util.*
 import javax.inject.Inject
 
-abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
+abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector, EasyPermissions.PermissionCallbacks {
 
     val dialogFragmentsHolder = DialogFragmentsHolder().apply {
         // DialogFragment может быть показан только один в общем случае
@@ -103,6 +105,14 @@ abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
         permissionResultListeners.remove(requestCode)?.onActivityResult()
     }
 
+    final override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+        notifyPermissionsResult(requestCode, true)
+    }
+
+    final override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+        notifyPermissionsResult(requestCode, false)
+    }
+
     override fun getAssets(): AssetManager {
         // при переопределении конфигурации (например, в LocaleContextWrapper или applyOverrideConfiguration)
         // возвращает другой инстанс в Context.getAssets() и Context.getResources().getAssets()
@@ -136,6 +146,14 @@ abstract class BaseActivity : BaseJugglerActivity(), HasAndroidInjector {
             onAllGranted
         ).apply {
             permissionResultListeners[code] = this
+        }
+    }
+
+    private fun notifyPermissionsResult(requestCode: Int, isAllGranted: Boolean) {
+        permissionResultListeners.remove(requestCode)?.let {
+            it.onRequestPermissionsResult(it.allPermissions.toTypedArray(),
+                it.allPermissions.map {
+                    if (isAllGranted) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED }.toIntArray())
         }
     }
 

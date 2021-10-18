@@ -28,6 +28,7 @@ import net.maxsmr.commonutils.gui.actions.message.BaseMessageAction
 import net.maxsmr.commonutils.gui.actions.message.text.TextMessage
 import net.maxsmr.commonutils.gui.fragments.dialogs.AlertTypedDialogFragment
 import net.maxsmr.commonutils.gui.fragments.dialogs.ProgressDialogFragment
+import net.maxsmr.commonutils.live.event.VmEvent
 import net.maxsmr.commonutils.live.event.VmListEvent
 import net.maxsmr.commonutils.rx.functions.ActionSafe
 import net.maxsmr.commonutils.rx.functions.BiFunctionSafe
@@ -39,6 +40,7 @@ import net.maxsmr.core_common.arch.rx.EMPTY_ACTION
 import net.maxsmr.core_common.arch.rx.ON_ERROR_MISSING
 import net.maxsmr.core_common.arch.rx.callinfo.*
 import net.maxsmr.core_common.arch.rx.scheduler.SchedulersProvider
+import net.maxsmr.core_common.ui.actions.IntentNavigationAction
 import net.maxsmr.core_common.ui.actions.NavigationAction
 import net.maxsmr.core_common.ui.viewmodel.delegates.getPersistableKey
 import kotlin.reflect.KProperty
@@ -62,6 +64,8 @@ abstract class BaseViewModel<SD : BaseScreenData>(
 ) : ViewModel(), LifecycleOwner {
 
     val navigationCommands = MutableLiveData<VmListEvent<NavigationAction>>()
+
+    val intentNavigationCommands: MutableLiveData<VmEvent<IntentNavigationAction>> = MutableLiveData()
 
     val toastMessageCommands = MutableLiveData<VmListEvent<BaseMessageAction<Toast, Context>>>()
 
