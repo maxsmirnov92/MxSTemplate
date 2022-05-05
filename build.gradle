@@ -5,25 +5,25 @@ buildscript {
     ext {
         sourceCompatibilityVersion = JavaVersion.VERSION_1_8
         jvmVersion = "1.8"
-        jvmDefaultArg = "-Xjvm-default=compatibility"
 
+        compileSdkVersion = 31
         targetSdkVersion = 30
         minSdkVersion = 17
 
-        gradlePluginVersion = '7.0.2'
-        buildToolsVersion = '30.0.2'
-        kotlinVersion = '1.4.32'
+        gradlePluginVersion = '7.1.2'
+        buildToolsVersion = '30.0.3'
+        kotlinVersion = '1.6.21'
         kotlinGradlePluginVersion = kotlinVersion
 
         // Support
         androidxFragmentVersion = '1.2.5'
 
         // Dagger
-        daggerVersion = '2.27'
+        daggerVersion = '2.35.1'
 
         // Network
         retrofitVersion = '2.6.0'
-        okHttpVersion = '4.1.1'
+        okHttpVersion = '4.9.0'
         okioVersion = '1.15.0'
         rxJavaAdapterVersion = '2.6.0'
 
@@ -31,7 +31,7 @@ buildscript {
 
         gsonConverterVersion = '2.6.1'
 
-        roomPersistenceVersion = '2.2.5'
+        roomPersistenceVersion = '2.4.2'
 
         // Mx Utils
 //        commonUtilsVersion = '1.1.0.2'
@@ -52,16 +52,16 @@ buildscript {
 
         // TODO remove all below after bintray:
 
-        androidxCoreVersion = '1.6.0'
-        androidxAppCompatVersion = '1.3.0'
+        androidxCoreVersion = '1.7.0'
+        androidxAppCompatVersion = '1.4.1'
         androidxFragmentVersion = '1.2.5'
         androidxViewPagerVersion = "1.2.0"
         androidxRecyclerViewVersion = "1.2.1"
         androidxSwipeRefreshVersion = "1.2.0"
         androidxConstraintLayoutVersion = '2.0.2'
         androidxPaletteVersion = "1.0.0"
-        androidxExifInterfaceVersion = "1.3.2"
-        materialVersion = "1.3.0"
+        androidxExifInterfaceVersion = "1.3.3"
+        materialVersion = "1.5.0"
         jetbrainsAnnotationsVersion = '13.0'
 
         googleServicesVersion = '4.2.0'
@@ -99,8 +99,9 @@ allprojects {
 //        maven { url 'https://dl.bintray.com/maxsmirnov92/maven' }
 //        maven { url 'https://dl.bintray.com/dsokolov/maven' }
         flatDir {
-//            dirs "../core-common/libs", "libs"
-            dirs 'libs'
+            dirs "../core-common/libs", "libs"
+            dirs "../core-network/libs", "libs"
+//            dirs 'libs'
         }
     }
 }

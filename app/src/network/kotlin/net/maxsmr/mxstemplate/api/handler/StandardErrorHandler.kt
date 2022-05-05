@@ -9,9 +9,7 @@ import net.maxsmr.core_network.error.handler.error.BaseNetworkErrorHandler
 import net.maxsmr.core_network.session.SessionStorage
 import javax.inject.Inject
 
-class StandardErrorHandler @Inject constructor(
-        private val context: Context
-): BaseNetworkErrorHandler() {
+open class StandardErrorHandler @Inject constructor(): BaseNetworkErrorHandler() {
 
     override fun handleNetworkException(e: NetworkException) {
         if (e is NonAuthorizedException) {
@@ -32,11 +30,8 @@ class StandardErrorHandler @Inject constructor(
 
     }
 
-    companion object {
-
-        private fun handleNonAuthorized() {
-            // чистим сесссию
-            SessionStorage.clear()
-        }
+    protected open fun handleNonAuthorized() {
+        // чистим сесссию
+        SessionStorage.clear()
     }
 }

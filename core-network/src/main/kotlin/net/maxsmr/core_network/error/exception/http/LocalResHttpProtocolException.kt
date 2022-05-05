@@ -2,7 +2,6 @@ package net.maxsmr.core_network.error.exception.http
 
 import android.net.Uri
 import net.maxsmr.commonutils.text.EMPTY_STRING
-import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.NO_ERROR
 import okhttp3.Response
 
@@ -14,7 +13,7 @@ class LocalResHttpProtocolException(
     url: String = EMPTY_STRING,
     method: String = EMPTY_STRING,
     headers: Map<String, String> = mapOf(),
-    httpCode: Int = HttpErrorCode.UNKNOWN.code,
+    httpCode: Int = HTTP_ERROR_CODE_UNKNOWN,
     httpMessage: String = EMPTY_STRING,
     innerCode: Int = NO_ERROR,
     innerMessage: String = EMPTY_STRING,
@@ -64,7 +63,7 @@ class LocalResHttpProtocolException(
         private val localUri: Uri?,
         cause: Throwable?,
         rawResponse: Response?
-    ) : HttpProtocolException.RawBuilder(rawResponse, cause) {
+    ) : HttpProtocolException.Builder(cause, rawResponse) {
 
         override fun build() = LocalResHttpProtocolException(localUri, this)
     }

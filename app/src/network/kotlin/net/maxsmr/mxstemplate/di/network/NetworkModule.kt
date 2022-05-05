@@ -60,12 +60,11 @@ class NetworkModule {
     @Provides
     @PerApplication
     fun provideCallAdapterFactory(
-        stringsProvider: StringsProvider,
         @Named(DI_NAME_ERROR_HANDLER_CALL_ADAPTER)
             errorHandler: BaseHttpErrorHandler?,
         gson: Gson
     ): CallAdapterFactory {
-        return CallAdapterFactory(stringsProvider, errorHandler, gson)
+        return CallAdapterFactory(errorHandler, gson)
     }
 
     @Provides

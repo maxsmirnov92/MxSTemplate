@@ -1,6 +1,6 @@
 package net.maxsmr.core_network.model.request.api
 
-import net.maxsmr.commonutils.model.gson.toJsonString
+import net.maxsmr.commonutils.model.gson.toJsonOrNull
 import net.maxsmr.core_network.di.networkComponent
 import net.maxsmr.core_network.model.request.log.BaseLogRequestData
 
@@ -17,5 +17,5 @@ abstract class BaseRetrofitModelApiRequest<LogRequestData : BaseLogRequestData.I
         }
 
     // gson не объявлять филдом
-    override fun getBody(): String = toJsonString(networkComponent.gson(), this)
+    override fun getBody(): String = networkComponent.gson().toJsonOrNull(this).orEmpty()
 }

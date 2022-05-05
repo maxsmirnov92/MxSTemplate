@@ -5,6 +5,7 @@ import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.mxstemplate.utils.PHONE_RUS_PREFIX_PLUS_SEVEN
 import net.maxsmr.mxstemplate.utils.normalizePhoneNumber
 import java.text.SimpleDateFormat
+import java.util.*
 
 const val REG_EX_PHONE_NUMBER_RUS = "^((\\+7|7|8)+([0-9]){10})\$"
 const val REG_EX_PHONE_NUMBER_RUS_WITHOUT_PREFIX = "^\\d{10}$"
@@ -55,5 +56,7 @@ fun validate(target: CharSequence?, pattern: String?): Boolean =
 fun isDateValid(
         dateText: String,
         pattern: String,
+        locale: Locale = Locale.getDefault(),
+        timeZone: TimeZone? = null,
         dateFormatConfigurator: ((SimpleDateFormat) -> Unit)? = null
-) = parseDate(dateText, pattern, dateFormatConfigurator) != null
+) = parseDate(dateText, pattern, locale, timeZone, dateFormatConfigurator) != null

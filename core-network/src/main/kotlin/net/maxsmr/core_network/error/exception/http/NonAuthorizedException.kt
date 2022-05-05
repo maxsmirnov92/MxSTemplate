@@ -1,7 +1,6 @@
 package net.maxsmr.core_network.error.exception.http
 
 import net.maxsmr.commonutils.text.EMPTY_STRING
-import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.exception.NetworkException
 
 /**
@@ -10,6 +9,6 @@ import net.maxsmr.core_network.error.exception.NetworkException
  * или на уровне errorCode - включает [ServerInnerException]
  */
 class NonAuthorizedException(
-        message: String? = null,
-        cause: Throwable
-): NetworkException(message ?: EMPTY_STRING, cause)
+    message: String? = null,
+    cause: Throwable
+) : NetworkException(message ?: EMPTY_STRING, cause)

@@ -5,7 +5,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion rootProject.ext.targetSdkVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
@@ -23,7 +23,7 @@ android {
         targetCompatibility sourceCompatibilityVersion
     }
 
-    lintOptions {
+    lint {
         checkReleaseBuilds false
         abortOnError false
     }
@@ -50,34 +50,24 @@ android {
     }
     kotlinOptions {
         jvmTarget = jvmVersion
-        freeCompilerArgs = ["$jvmDefaultArg"]
     }
 }
 
 dependencies {
-    api fileTree(dir: "libs", include: ["*.jar", "*.aar"])
-//    api files('libs/commonutils-jre-signed.jar')
-//    api(name: 'juggler-0.1.22', ext:'aar')
-//    api files('libs/juggler-0.1.22.aar')
+    // aar здесь не подходит для api/implementation
+    // но jar можно как api
+    api fileTree(dir: "libs", include: ["*.jar"])
+    // все aar из /libs прописываем отдельно как api
+    // для видимости в последующих модулях
+    api(name: 'commonutils-release-signed', ext:'aar')
+    api(name: 'tasksutils-release-signed', ext:'aar')
+    api(name: 'permissionchecker-release-signed', ext:'aar')
+    api(name: 'recyclerview-lib-release-signed', ext:'aar')
+    api(name: 'jugglerhelper-release-signed', ext:'aar')
+    api(name: 'juggler-0.1.22', ext:'aar')
 
     // Multi Dex
     api "androidx.multidex:multidex:$multidexVersion"
-
-    // CommonUtils
-//    api (name:'commonutils-jre-signed', ext:'jar')
-//    api (name:'commonutils-release-signed', ext:'aar')
-//    api (name:'tasksutils-release-signed', ext:'aar')
-//    api "net.maxsmr:commonutils:$commonUtilsVersion"
-
-//    api project(path: ':commonutils')
-//    api project(path: ':tasksutils')
-//    api project(path: ':permissionchecker')
-//    api project(path: ':jugglerhelper')
-//    api project(path: ':recyclerview-lib')
-
-    // Kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
 
     // TODO remove all below after bintray:
 

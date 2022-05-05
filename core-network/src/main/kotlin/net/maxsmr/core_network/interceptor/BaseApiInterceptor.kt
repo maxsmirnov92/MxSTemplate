@@ -1,9 +1,8 @@
 package net.maxsmr.core_network.interceptor
 
-import net.maxsmr.commonutils.model.isJsonFieldJson
 import net.maxsmr.core_network.gson.converter.factory.FIELD_API_ORIGINAL_BODY
 import net.maxsmr.core_network.model.request.api.IApiMapper
-import net.maxsmr.core_network.utils.requestBodyToString
+import net.maxsmr.core_network.utils.copyBodyToStringOrThrow
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -24,7 +23,7 @@ abstract class BaseApiInterceptor(
         var request = originalRequest
         if (proceedOriginalRequest) {
             // если это последний в цепочке, то отдаём оригинальный json, если есть
-            val body = requestBodyToString(request)
+            val body = request.copyBodyToStringOrThrow().orEmpty()
 
             if (body.isNotEmpty()) {
                 var wrappedJsonBody: JSONObject? = null
@@ -35,7 +34,7 @@ abstract class BaseApiInterceptor(
                 }
 
                 wrappedJsonBody?.let {
-                    if (isJsonFieldJson(wrappedJsonBody, FIELD_API_ORIGINAL_BODY)) {
+                    if (it.has(FIELD_API_ORIGINAL_BODY)) {
                         request = request.newBuilder()
                             .method(
                                 request.method,

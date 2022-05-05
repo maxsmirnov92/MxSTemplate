@@ -3,18 +3,15 @@ package net.maxsmr.core_network.error.exception.http
 import android.text.TextUtils
 import com.google.gson.Gson
 import net.maxsmr.commonutils.text.EMPTY_STRING
-import retrofit2.HttpException
-import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.NO_ERROR
-import net.maxsmr.core_network.utils.headersToMap
-import net.maxsmr.core_network.utils.requestBodyToString
 import net.maxsmr.core_network.error.exception.NetworkException
 import net.maxsmr.core_network.error.exception.converters.BaseErrorResponseConverter
 import net.maxsmr.core_network.model.response.ResponseObj
+import net.maxsmr.core_network.utils.copyBodyToString
+import net.maxsmr.core_network.utils.headersToMap
 import net.maxsmr.core_network.utils.isResponseOk
-import net.maxsmr.core_network.utils.responseBodyToString
 import okhttp3.Response
-import java.lang.RuntimeException
+import retrofit2.HttpException
 
 /**
  * Базовая ошибка при получении ответа не 2xx с разобранными полями ответа;
@@ -25,7 +22,7 @@ open class HttpProtocolException(
     val url: String = EMPTY_STRING,
     val method: String = EMPTY_STRING,
     val headers: Map<String, String> = mapOf(),
-    val httpCode: Int = HttpErrorCode.UNKNOWN.code,
+    val httpCode: Int = HTTP_ERROR_CODE_UNKNOWN,
     val httpMessage: String = EMPTY_STRING,
     /**
      * дополнительный внутренний код сервера
@@ -39,9 +36,7 @@ open class HttpProtocolException(
     cause: Throwable?
 ) : NetworkException(message, cause) {
 
-    val httpErrorCode = HttpErrorCode.from(httpCode)
-
-    private constructor(builder: Builder<out ResponseObj<*>>) : this(
+    private constructor(builder: InnerResponseBuilder<out ResponseObj<*>>) : this(
         builder.url,
         builder.method,
         builder.headers,
@@ -64,7 +59,7 @@ open class HttpProtocolException(
         builder.cause
     )
 
-    private constructor(builder: RawBuilder) : this(
+    private constructor(builder: Builder) : this(
         builder.url,
         builder.method,
         builder.headers,
@@ -113,12 +108,13 @@ open class HttpProtocolException(
                 "errorBodyString='$errorBodyString')"
     }
 
-    abstract class BaseBuilder(
-        var httpCode: Int,
-        var httpMessage: String,
+    open class Builder(
         val cause: Throwable?,
         rawResponse: Response?
     ) {
+
+        var httpCode: Int = rawResponse?.code ?: HTTP_ERROR_CODE_UNKNOWN
+        var httpMessage: String = rawResponse?.message.orEmpty()
 
         val url: String
         val method: String
@@ -128,34 +124,19 @@ open class HttpProtocolException(
         val errorBodyString: String
 
         init {
-
             val request = rawResponse?.request
-            url = request?.url?.toString() ?: EMPTY_STRING
-            method = request?.method ?: EMPTY_STRING
-            headers = headersToMap(request?.headers)
-
-            requestBodyString = if (request != null) {
-                try {
-                    requestBodyToString(request)
-                } catch (e: RuntimeException) {
-                    EMPTY_STRING
-                }
-            } else {
-                EMPTY_STRING
-            }
-
+            url = request?.url?.toString().orEmpty()
+            method = request?.method.orEmpty()
+            headers = request?.headers.headersToMap()
+            requestBodyString = request.copyBodyToString().orEmpty()
             errorBodyString = if (!isResponseOk(httpCode)) {
-                try {
-                    responseBodyToString(rawResponse)
-                } catch (e: RuntimeException) {
-                    EMPTY_STRING
-                }
+                rawResponse.copyBodyToString()?.first.orEmpty()
             } else {
                 EMPTY_STRING
             }
         }
 
-        abstract fun build(): HttpProtocolException
+        open fun build() = HttpProtocolException(this)
     }
 
     /**
@@ -164,13 +145,11 @@ open class HttpProtocolException(
      * @param converter конкретный [BaseErrorResponseConverter] для преобразования тела
      * ошибочного респонса в указанную сущность [Response]
      */
-    open class Builder<Response : ResponseObj<*>>(
+    open class InnerResponseBuilder<Response : ResponseObj<*>>(
         cause: HttpException? = null,
         converter: BaseErrorResponseConverter<Response>? = null,
         gson: Gson? = null
-    ) : BaseBuilder(
-        cause?.code() ?: HttpErrorCode.UNKNOWN.code,
-        cause?.message() ?: EMPTY_STRING,
+    ) : Builder(
         cause,
         cause?.response()?.raw()
     ) {
@@ -204,17 +183,9 @@ open class HttpProtocolException(
         override fun build() = HttpProtocolException(this)
     }
 
-    open class RawBuilder(rawResponse: Response?, cause: Throwable?) : BaseBuilder(
-        rawResponse?.code ?: HttpErrorCode.UNKNOWN.code,
-        rawResponse?.message ?: EMPTY_STRING,
-        cause,
-        rawResponse,
-    ) {
-
-        override fun build() = HttpProtocolException(this)
-    }
-
     companion object {
+
+        const val HTTP_ERROR_CODE_UNKNOWN = -1
 
         fun prepareMessage(cause: Throwable?, vararg parts: String): String {
             val partsList = mutableListOf<String>()

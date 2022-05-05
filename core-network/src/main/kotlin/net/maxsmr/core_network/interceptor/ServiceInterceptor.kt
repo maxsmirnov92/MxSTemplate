@@ -5,9 +5,7 @@ import net.maxsmr.core_common.PLATFORM_NAME
 import net.maxsmr.core_network.gson.converter.factory.FIELD_API_ORIGINAL_BODY
 import net.maxsmr.core_network.model.request.RequestBodyType
 import net.maxsmr.core_network.model.request.api.IApiMapper
-import net.maxsmr.core_network.utils.appendServiceFields
-import net.maxsmr.core_network.utils.getPath
-import net.maxsmr.core_network.utils.requestBodyToString
+import net.maxsmr.core_network.utils.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -32,8 +30,8 @@ class ServiceInterceptor constructor(
 
         var request: Request = originalRequest
 
-        val path = getPath(request)
-        val body = requestBodyToString(request)
+        val path = request.path().orEmpty()
+        val body = request.copyBodyToStringOrThrow().orEmpty()
 
         val apiRequestPair = IApiMapper.findApiRequestByOriginalRequestBody(apiMap, body, path)
         val apiRequest = apiRequestPair.second?.request

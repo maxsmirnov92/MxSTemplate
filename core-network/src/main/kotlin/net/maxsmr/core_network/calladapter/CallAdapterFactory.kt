@@ -11,13 +11,11 @@ import retrofit2.CallAdapter
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import net.maxsmr.core_network.error.HttpErrorCode
 import net.maxsmr.core_network.error.exception.NetworkException
 import net.maxsmr.core_network.error.exception.NoInternetException
 import net.maxsmr.core_network.error.exception.http.*
 import net.maxsmr.core_network.error.exception.converters.DefaultErrorResponseConverter
 import net.maxsmr.core_network.error.handler.error.http.BaseHttpErrorHandler
-import net.maxsmr.core_network.model.response.ResponseObj
 import java.io.IOException
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -25,7 +23,6 @@ import java.net.ConnectException
 
 @Suppress("UNCHECKED_CAST")
 class CallAdapterFactory(
-    private val stringsProvider: StringsProvider,
     private val errorHandler: BaseHttpErrorHandler? = null,
     private val gson: Gson
 ) : CallAdapter.Factory() {
@@ -44,7 +41,7 @@ class CallAdapterFactory(
      */
     protected fun createHttpProtocolExceptionByCause(cause: HttpException, call: Call<*>) =
             // в кач-ве примера используется AuthAccessTokenErrorResponseConverter
-            HttpProtocolException.Builder(
+            HttpProtocolException.InnerResponseBuilder(
                     cause,
                     DefaultErrorResponseConverter(),
                     gson
@@ -58,21 +55,9 @@ class CallAdapterFactory(
      * @return [Observable] с конкретной ошибкой от [BaseWrappedHttpException]
      */
     protected fun <Response : Any?, E : BaseWrappedHttpException?> onHttpException(e: HttpException, call: Call<Response>): Observable<E> {
-
         val httpError = createHttpProtocolExceptionByCause(e, call)
-
-        val wrappedError = when (httpError.httpErrorCode) {
-            HttpErrorCode.NOT_MODIFIED -> NotModifiedException(stringsProvider.getString(R.string.http_not_modified_error_text), httpError)
-            HttpErrorCode.BAD_REQUEST -> BadRequestError(stringsProvider.getString(R.string.http_bad_request_error_text), httpError)
-            HttpErrorCode.NOT_AUTHORIZED -> NonAuthorizedException(stringsProvider.getString(R.string.http_not_authorized_error_text), httpError)
-            HttpErrorCode.NOT_FOUND -> NotFoundError(stringsProvider.getString(R.string.http_not_found_error_text), httpError)
-            HttpErrorCode.INTERNAL_SERVER_ERROR -> InternalServerError(stringsProvider.getString(R.string.http_internal_server_error_text), httpError)
-            HttpErrorCode.FORBIDDEN -> ForbiddenError(stringsProvider.getString(R.string.http_forbidden_error_text), httpError)
-            HttpErrorCode.UNKNOWN -> OtherHttpException(stringsProvider.getString(R.string.http_other_error_text), httpError)
-        }
-        handleBaseError(wrappedError)
-
-        return Observable.error<E>(wrappedError)
+        handleBaseError(httpError)
+        return Observable.error<E>(httpError)
     }
 
     /**

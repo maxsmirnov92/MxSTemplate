@@ -5,7 +5,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion rootProject.ext.targetSdkVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     useLibrary 'android.test.runner'
@@ -44,7 +44,7 @@ android {
         targetCompatibility sourceCompatibilityVersion
     }
 
-    lintOptions {
+    lint {
         checkReleaseBuilds false
         abortOnError false
     }
@@ -115,7 +115,6 @@ android {
 
     kotlinOptions {
         jvmTarget = jvmVersion
-        freeCompilerArgs = ["$jvmDefaultArg"]
     }
 
     buildFeatures {
@@ -124,7 +123,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
 
 //    implementation project(":core-common")
     implementation project(":core-network")
@@ -142,10 +141,6 @@ dependencies {
     implementation "androidx.room:room-runtime:$roomPersistenceVersion"
     kapt "androidx.room:room-compiler:$roomPersistenceVersion"
     implementation "androidx.room:room-ktx:$roomPersistenceVersion"
-
-    // Kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
 
     // Tests
     testImplementation "androidx.test:core:$testCoreVersion"

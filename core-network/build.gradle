@@ -5,7 +5,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion rootProject.ext.targetSdkVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
@@ -23,7 +23,7 @@ android {
         targetCompatibility sourceCompatibilityVersion
     }
 
-    lintOptions {
+    lint {
         checkReleaseBuilds false
         abortOnError false
     }
@@ -50,16 +50,15 @@ android {
     }
     kotlinOptions {
         jvmTarget = jvmVersion
-        freeCompilerArgs = ["$jvmDefaultArg"]
     }
 }
 
 dependencies {
-    api fileTree(dir: "libs", include: ["*.jar", "*.aar"])
+    api fileTree(dir: "libs", include: ["*.jar"])
 
     api project(':core-common')
 
-//    api (name:'networkutils-release-signed', ext:'aar')
+    api(name: 'networkutils-release-signed', ext:'aar')
 //    api "net.maxsmr:networkutils:networkUtilsVersion"
 //    api project(path: ':networkutils')
 
@@ -75,8 +74,4 @@ dependencies {
     api "com.squareup.retrofit2:converter-scalars:$retrofitVersion"
 
     api "com.squareup.picasso:picasso:$picassoVersion"
-
-    // Kotlin
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
 }

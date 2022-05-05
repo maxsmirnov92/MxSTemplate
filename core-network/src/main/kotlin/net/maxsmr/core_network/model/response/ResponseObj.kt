@@ -3,7 +3,7 @@ package net.maxsmr.core_network.model.response
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import net.maxsmr.commonutils.entity.EmptyValidable
-import net.maxsmr.commonutils.model.gson.fromJsonObjectString
+import net.maxsmr.commonutils.model.gson.fromJsonOrNull
 import java.lang.reflect.Type
 
 open class ResponseObj<D> : EmptyValidable {
@@ -56,7 +56,7 @@ open class ResponseObj<D> : EmptyValidable {
             source: ResponseObj<*>,
             gson: Gson
         ): ResponseObj<D>? {
-            fromJsonObjectString<D>(gson, data, typeOfD)?.let {
+            gson.fromJsonOrNull<D>(data, typeOfD)?.let {
                 val result = ResponseObj<D>()
                 result.data = it
                 result.errorCode = source.errorCode

@@ -117,7 +117,7 @@ abstract class BaseWebViewFragment<VM : BaseWebViewModel<*>> : BaseFragment<VM>(
     @JvmOverloads
     protected fun loadDataBase64(data: String, charset: Charset = Charsets.UTF_8) {
         if (isWebViewInitialized) {
-            webView.loadDataBase64(data, charset)
+            webView.loadDataBase64(data, charset.name())
         }
     }
 

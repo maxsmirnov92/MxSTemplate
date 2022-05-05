@@ -2,7 +2,7 @@ package net.maxsmr.core_network.model.request.api
 
 import net.maxsmr.commonutils.text.EMPTY_STRING
 import net.maxsmr.core_network.gson.converter.factory.FIELD_API_REQUEST_HASH
-import net.maxsmr.core_network.utils.requestBodyToString
+import net.maxsmr.core_network.utils.copyBodyToString
 import okhttp3.Request
 import org.json.JSONObject
 import java.io.Serializable
@@ -41,7 +41,7 @@ interface IApiMapper {
         }
 
         fun findApiRequestByOriginalRequest(map: Map<ApiKeyInfo, ApiValueInfo>, request: Request, path: String): Pair<String, ApiValueInfo?> =
-                findApiRequestByOriginalRequestBody(map, requestBodyToString(request), path)
+                findApiRequestByOriginalRequestBody(map, request.copyBodyToString().orEmpty(), path)
 
         fun findApiRequestByOriginalRequestBody(map: Map<ApiKeyInfo, ApiValueInfo>, requestBody: String, path: String): Pair<String, ApiValueInfo?> {
             val requestJsonBody = if (requestBody.isNotEmpty()) JSONObject(requestBody) else null
